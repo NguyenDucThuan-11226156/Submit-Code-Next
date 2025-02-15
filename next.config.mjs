@@ -1,9 +1,6 @@
-const isFitDomain = typeof window !== 'undefined' && window.location.hostname === 'fit.neu.edu.vn';
+// const nextConfig = {
+//   basePath: process.env.NODE_ENV === 'production' ? '/submit-code' : '',
+//   trailingSlash: false,
+// };
 
-const nextConfig = {
-  /* config options here */
-  basePath: isFitDomain ? '/submit-code' : '',
-  trailingSlash: false,
-};
-
-export default nextConfig;
+// export default nextConfig;
