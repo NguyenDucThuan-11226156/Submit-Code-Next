@@ -1,27 +1,11 @@
-const nextConfig = {
-  trailingSlash: false,
+// next.config.js
+module.exports = {
   async rewrites() {
     return [
       {
-        source: "/submit-code/:path*",
-        destination: "https://submit-code-next.vercel.app/:path*", // Submit Code (Thuan)
-      },
-      // Các điều hướng khác...
-    ];
-  },
-  async headers() {
-    return [
-      {
-        source: "/(.*)",
-        headers: [
-          {
-            key: "Cross-Origin-Opener-Policy",
-            value: "same-origin-allow-popups",
-          },
-        ],
+        source: '/submit-code/:path*',
+        destination: 'https://submit-code-next.vercel.app/:path*', // Trỏ tới dự án submit-code đã được triển khai trên Vercel
       },
     ];
   },
 };
-
-export default nextConfig;
