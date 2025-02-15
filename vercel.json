@@ -1,0 +1,9 @@
+{
+    "rewrites": [
+      {
+        "source": "/submit-code/:path*",
+        "destination": "https://submit-code-next.vercel.app/:path*"
+      }
+    ]
+  }
+  
