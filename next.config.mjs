@@ -1,10 +1,8 @@
-// import type { NextConfig } from 'next';
-
-const isProd = process.env.NODE_ENV === 'production';
+const isFitDomain = typeof window !== 'undefined' && window.location.hostname === 'fit.neu.edu.vn';
 
 const nextConfig = {
   /* config options here */
-  basePath: isProd ? '/submit-code' : '',
+  basePath: isFitDomain ? '/submit-code' : '',
   trailingSlash: false,
 };
 
