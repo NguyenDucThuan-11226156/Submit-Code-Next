@@ -43,8 +43,6 @@ const [selectedSubmission, setSelectedSubmission] = useState(null);
   const pathname = usePathname();
   const pathParts = pathname.split("/").filter(Boolean);
   const roomId = pathParts[pathParts.length - 2];
-// const roomId = "2wpTye"
-// console.log(roomId)
   const [user, setUser] = useState(null);
   const [completedQuestions, setCompletedQuestions] = useState(0);
   const totalQuestions = questions.length;
@@ -321,7 +319,7 @@ const [selectedSubmission, setSelectedSubmission] = useState(null);
             <Text color="gray.500">Select a question to view and edit the code</Text>
           )}
 
-          <LanguageSelector language={language} onSelect={onSelect} />
+          <LanguageSelector language={language} onSelect={onSelect} colorMode={colorMode} />
           <Editor
             options={{ minimap: { enabled: false } }}
             height="50vh"
