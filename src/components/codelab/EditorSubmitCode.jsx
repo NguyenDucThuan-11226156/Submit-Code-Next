@@ -44,6 +44,7 @@ const [selectedSubmission, setSelectedSubmission] = useState(null);
   const pathname = usePathname();
 const pathParts = pathname.split("/");
 const roomId = pathParts[1]; // Thay đổi logic này nếu cấu trúc URL khác
+console.log(roomId)
   const [user, setUser] = useState(null);
   const [completedQuestions, setCompletedQuestions] = useState(0);
   const totalQuestions = questions.length;
