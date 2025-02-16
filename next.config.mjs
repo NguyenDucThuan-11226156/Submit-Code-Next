@@ -1,4 +1,6 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {};
+// const nextConfig = {
+//   basePath: process.env.NODE_ENV === 'production' ? '/submit-code' : '',
+//   trailingSlash: false,
+// };
 
-export default nextConfig;
+// export default nextConfig;
