@@ -34,7 +34,6 @@ export default function CodeEditor() {
   const editorRef = useRef();
   const [isModalOpen, setIsModalOpen] = useState(false);
 const [selectedSubmission, setSelectedSubmission] = useState(null);
-
   const [submissions, setSubmissions] = useState([]);
   const [value, setValue] = useState("");
   const [language, setLanguage] = useState("javascript");
@@ -43,8 +42,8 @@ const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [input, setInput] = useState(""); // Input field state
   const pathname = usePathname();
 const pathParts = pathname.split("/");
-// const roomId = pathParts[1]; // Thay đổi logic này nếu cấu trúc URL khác
-const roomId = "2wpTye"
+const roomId = pathParts[2]; // Thay đổi logic này nếu cấu trúc URL khác
+// const roomId = "2wpTye"
 // console.log(roomId)
   const [user, setUser] = useState(null);
   const [completedQuestions, setCompletedQuestions] = useState(0);
@@ -63,7 +62,6 @@ const roomId = "2wpTye"
     setSelectedSubmission(submission);
     setIsModalOpen(true);
   };
-  
   useEffect(() => {
     const fetchUserSubmission = async () => {
       if (user && selectedQuestion) {
