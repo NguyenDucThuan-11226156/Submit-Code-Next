@@ -394,9 +394,10 @@ const [selectedSubmission, setSelectedSubmission] = useState(null);
     <ModalHeader>Mã nguồn đã nộp</ModalHeader>
     <ModalCloseButton />
     <ModalBody>
-    <Box bg="gray.900" color="white" p={4} borderRadius="md">
-  <pre>{submissions.code}</pre>
-</Box>
+    <Box bg="gray.900" color="white" p={4} borderRadius="md" overflowX="auto">
+      <pre>{submissions.code}</pre>
+    </Box>
+
     </ModalBody>
     <ModalFooter>
       <Button colorScheme="blue" mr={3} onClick={() => setIsModalOpen(false)}>
