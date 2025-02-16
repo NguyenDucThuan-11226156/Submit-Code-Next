@@ -1,12 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Input,
   Button,
   Text,
   VStack,
-  useColorModeValue,
 } from "@chakra-ui/react";
 import { FaLock } from "react-icons/fa";
 import TeacherStatsContent from "./TeacherStatsContent";
@@ -16,11 +15,20 @@ export default function TeacherStats() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Kiểm tra trạng thái từ localStorage
+  useEffect(() => {
+    const storedAuth = localStorage.getItem("isAuthenticated");
+    if (storedAuth === "true") {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
   const handleLogin = () => {
     setLoading(true);
     setTimeout(() => {
       if (password === "@smartdoc") {
         setIsAuthenticated(true);
+        localStorage.setItem("isAuthenticated", "true"); // Lưu trạng thái vào localStorage
       } else {
         alert("Sai mật khẩu! Vui lòng thử lại.");
         setPassword("");

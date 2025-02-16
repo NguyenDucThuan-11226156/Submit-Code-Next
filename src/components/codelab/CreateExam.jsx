@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Input,
@@ -17,11 +17,20 @@ export default function TeacherStats() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Kiểm tra trạng thái xác thực từ localStorage khi component được tải
+  useEffect(() => {
+    const storedAuth = localStorage.getItem("isAuthenticated");
+    if (storedAuth === "true") {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
   const handleLogin = () => {
     setLoading(true);
     setTimeout(() => {
       if (password === "@smartdoc") {
         setIsAuthenticated(true);
+        localStorage.setItem("isAuthenticated", "true"); // Lưu trạng thái vào localStorage
       } else {
         alert("Sai mật khẩu! Vui lòng thử lại.");
         setPassword("");
