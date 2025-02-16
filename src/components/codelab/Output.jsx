@@ -74,8 +74,9 @@ const checkTestCases = async () => {
   for (const testCase of selectedQuestion.testCases) {
     try {
       const { run: result } = await executeCode(language, sourceCode, testCase.input);
-      const programOutput = result.output.trim();
+      const programOutput = result.output.trim().split("\n").join("\n");
       const expectedOutput = testCase.expectedOutput.trim();
+      console.log(expectedOutput)
       const isPass = programOutput === expectedOutput;
       results.push({ input: testCase.input, expectedOutput, programOutput, isPass });
     } catch (error) {
@@ -191,10 +192,11 @@ const checkTestCases = async () => {
           borderRadius={4}
           borderColor={isError ? "red.500" : "#333"}
           mb={4}
+          style={{ whiteSpace: "pre-wrap" }} // Thêm dòng này
         >
-          {output
-            ? output.map((line, i) => <Text key={i}>{line}</Text>)
-            : 'Click "Run Code" to see the output here'}
+          <Text style={{ whiteSpace: "pre-wrap" }}>
+  {output ? output.join("\n") : 'Click "Run Code" to see the output here'}
+</Text>
         </Box>
 
         {/* Kết quả kiểm tra test case */}
@@ -214,7 +216,14 @@ const checkTestCases = async () => {
           </Text>
           {/* <Text fontSize="sm">🔹 Input: {testCaseResult.input}</Text>
           <Text fontSize="sm">✅ Expected: {testCaseResult.expectedOutput}</Text> */}
-          {/* <Text fontSize="sm">📌 Output: {testCaseResult.programOutput}</Text> */}
+          {/* <Box>
+            <Text fontSize="sm" color={testCaseResult.isPass ? "green.500" : "red.500"}>📌 Output:</Text>
+            {testCaseResult.programOutput.split("\n").map((line, index) => (
+              <Text key={index} fontSize="sm" color={"black"}>
+                {line}
+              </Text>
+            ))}
+          </Box> */}
         </Box>
       ))}
     </Box>
