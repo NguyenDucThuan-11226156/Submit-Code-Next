@@ -1,4 +1,4 @@
-import { denormalizeSubjectCode } from "@/helpers/curriculumTable";
+"use-client"
 import { ChakraProvider } from "@chakra-ui/react";
 import TeacherStats from "@/components/codelab/Statistic";
 import theme from "@/theme";
