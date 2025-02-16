@@ -41,8 +41,8 @@ const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [selectedQuestion, setSelectedQuestion] = useState(null); // Câu hỏi đang được chọn
   const [input, setInput] = useState(""); // Input field state
   const pathname = usePathname();
-const pathParts = pathname.split("/");
-const roomId = pathParts[2]; // Thay đổi logic này nếu cấu trúc URL khác
+  const pathParts = pathname.split("/").filter(Boolean);
+  const roomId = pathParts[pathParts.length - 2];
 // const roomId = "2wpTye"
 // console.log(roomId)
   const [user, setUser] = useState(null);
