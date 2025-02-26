@@ -176,7 +176,7 @@ export default function TeacherStatsContent() {
   const checkCode = async (question) => {
     try {
       setIsChecking(true);
-      const response = await fetch("http://localhost:8015/api/save-user-codes", {
+      const response = await fetch("https://fit.neu.edu.vn/codelab/api/save-user-codes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -194,7 +194,7 @@ export default function TeacherStatsContent() {
       setIsChecking(false);
   
       // Mở kết quả trong tab mới
-      window.open(`http://localhost:8015/results/${roomId}/${question.id}/index.html`, "_blank");
+      window.open(`https://fit.neu.edu.vn/codelab/results/${roomId}/${question.id}/index.html`, "_blank");
     } catch (error) {
       console.error("Lỗi khi gửi yêu cầu kiểm tra mã:", error);
       alert("Kiểm tra thất bại: " + error.message);
