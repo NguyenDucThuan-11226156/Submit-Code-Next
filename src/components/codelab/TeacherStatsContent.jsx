@@ -23,6 +23,7 @@ import {
   ModalFooter,
   HStack,
   Spacer,
+  Center,
 } from "@chakra-ui/react";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 import { Bar } from "react-chartjs-2";
@@ -43,8 +44,11 @@ import {
   FaTimesCircle,
   FaChartBar,
   FaInfoCircle,
+  FaFileExcel,
 } from "react-icons/fa";
-
+import { saveAs } from "file-saver";
+import * as XLSX from "xlsx";
+import { result } from "lodash";
 // Đăng ký các thành phần của Chart.js
 ChartJS.register(
   CategoryScale,
@@ -61,6 +65,7 @@ export default function TeacherStatsContent() {
   // Hook cho Modal preview code
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedCode, setSelectedCode] = useState("");
+  const [isChecking, setIsChecking] = useState(false);
   const pathname = usePathname();
   const pathParts = pathname.split("/");
   const roomId = pathParts[1]; // Thay đổi logic này nếu cấu trúc URL khác
@@ -98,7 +103,29 @@ export default function TeacherStatsContent() {
   if (loading) {
     return <Spinner size="xl" />;
   }
+  const exportToExcel = (question) => {
+  const worksheet = XLSX.utils.json_to_sheet(
+    question.users.map((user, idx) => ({
+      "STT": idx + 1,
+      "Tên User": user.displayName || "N/A",
+      "Email": user.email || "N/A",
+      "Số lượng testcases hoàn thành": user.passedTestCases || "N/A",
+      "Trạng thái": user.status ? "Hoàn thành" : "Chưa hoàn thành",
+      "Thời gian nộp": user.timestamp
+        ? dayjs(user.timestamp.toDate()).format("DD/MM/YYYY HH:mm:ss")
+        : "N/A",
+      "Code": user.code || "N/A"
+    }))
+  );
 
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Thống kê");
+
+  const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+  const data = new Blob([excelBuffer], { type: "application/octet-stream" });
+
+  saveAs(data, `${question.title}_statistics.xlsx`);
+};
   // Dữ liệu cho biểu đồ
   const chartData = {
     labels: questions.map((q) => q.title),
@@ -143,7 +170,38 @@ export default function TeacherStatsContent() {
     setSelectedCode(code);
     onOpen();
   };
+  const handleCheckCode = ()=>{
 
+  }
+  const checkCode = async (question) => {
+    try {
+      setIsChecking(true);
+      const response = await fetch("https://fit.neu.edu.vn/codelab/api/save-user-codes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          classId: roomId,
+          questionId: question.id,
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+  
+      setIsChecking(false);
+  
+      // Mở kết quả trong tab mới
+      window.open(`https://fit.neu.edu.vn/codelab/results/${roomId}/${question.id}/index.html`, "_blank");
+    } catch (error) {
+      console.error("Lỗi khi gửi yêu cầu kiểm tra mã:", error);
+      alert("Kiểm tra thất bại: " + error.message);
+    }
+  };
+  
+  
   return (
     <Box
       p={6}
@@ -184,6 +242,51 @@ export default function TeacherStatsContent() {
             <Text fontSize="xl" fontWeight="bold" mb={2} color="blue.700">
               <Icon as={FaInfoCircle} mr={2} /> {question.title}
             </Text>
+            <HStack justify="flex-end" mb={4} spacing={1}>
+              <Button
+                leftIcon={<Icon as={FaFileExcel} />}
+                colorScheme="green"
+                size="md"
+                px={6}
+                py={3}
+                fontWeight="bold"
+                borderRadius="lg"
+                _hover={{ bg: "green.600" }}
+                _active={{ bg: "green.700" }}
+                onClick={() => exportToExcel(question)}
+              >
+                Xuất Excel
+              </Button>
+
+              <Button
+                leftIcon={<Icon as={FaCheckCircle} />}
+                colorScheme="blue"
+                size="md"
+                px={6}
+                py={3}
+                fontWeight="bold"
+                borderRadius="lg"
+                _hover={{ bg: "blue.600" }}
+                _active={{ bg: "blue.700" }}
+                onClick={() => checkCode(question)}
+              >
+                Kiểm tra
+              </Button>
+            </HStack>
+              {/* Spinner khi đang kiểm tra */}
+              {isChecking && (
+                <Center
+                  position="fixed"
+                  top="0"
+                  left="0"
+                  width="100vw"
+                  height="100vh"
+                  backgroundColor="rgba(0, 0, 0, 0.5)"
+                  zIndex="9999"
+                >
+                  <Spinner size="xl" color="white" thickness="4px" speed="0.65s" />
+                </Center>
+              )}
             <Table
               variant="striped"
               border="1px solid gray"

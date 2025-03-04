@@ -34,7 +34,6 @@ export default function CodeEditor() {
   const editorRef = useRef();
   const [isModalOpen, setIsModalOpen] = useState(false);
 const [selectedSubmission, setSelectedSubmission] = useState(null);
-
   const [submissions, setSubmissions] = useState([]);
   const [value, setValue] = useState("");
   const [language, setLanguage] = useState("javascript");
@@ -42,8 +41,8 @@ const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [selectedQuestion, setSelectedQuestion] = useState(null); // Câu hỏi đang được chọn
   const [input, setInput] = useState(""); // Input field state
   const pathname = usePathname();
-const pathParts = pathname.split("/");
-const roomId = pathParts[1]; // Thay đổi logic này nếu cấu trúc URL khác
+  const pathParts = pathname.split("/").filter(Boolean);
+  const roomId = pathParts[pathParts.length - 2];
   const [user, setUser] = useState(null);
   const [completedQuestions, setCompletedQuestions] = useState(0);
   const totalQuestions = questions.length;
@@ -61,7 +60,6 @@ const roomId = pathParts[1]; // Thay đổi logic này nếu cấu trúc URL kh�
     setSelectedSubmission(submission);
     setIsModalOpen(true);
   };
-  
   useEffect(() => {
     const fetchUserSubmission = async () => {
       if (user && selectedQuestion) {
@@ -321,7 +319,7 @@ const roomId = pathParts[1]; // Thay đổi logic này nếu cấu trúc URL kh�
             <Text color="gray.500">Select a question to view and edit the code</Text>
           )}
 
-          <LanguageSelector language={language} onSelect={onSelect} />
+          <LanguageSelector language={language} onSelect={onSelect} colorMode={colorMode} />
           <Editor
             options={{ minimap: { enabled: false } }}
             height="50vh"
@@ -396,9 +394,10 @@ const roomId = pathParts[1]; // Thay đổi logic này nếu cấu trúc URL kh�
     <ModalHeader>Mã nguồn đã nộp</ModalHeader>
     <ModalCloseButton />
     <ModalBody>
-    <Box bg="gray.900" color="white" p={4} borderRadius="md">
-  <pre>{submissions.code}</pre>
-</Box>
+    <Box bg="gray.900" color="white" p={4} borderRadius="md" overflowX="auto">
+      <pre>{submissions.code}</pre>
+    </Box>
+
     </ModalBody>
     <ModalFooter>
       <Button colorScheme="blue" mr={3} onClick={() => setIsModalOpen(false)}>
