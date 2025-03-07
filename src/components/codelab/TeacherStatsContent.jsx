@@ -285,78 +285,76 @@ export default function TeacherStatsContent() {
                   <Spinner size="xl" color="white" thickness="4px" speed="0.65s" />
                 </Center>
               )}
-  <Table
-    // variant="striped"
-    colorScheme="gray"
-    size="sm"
-    borderWidth="1px"
-    borderCollapse="collapse" // 🔥 Thêm dòng này để hiển thị đầy đủ border
-  >
-    <Thead>
-      <Tr>
-        {["STT", "Tên User", "Email", "Số lượng testcases hoàn thành", "Trạng thái", "Thời gian nộp", "Preview Code"].map(
-          (header, idx) => (
-            <Th key={idx} border="1px solid gray" px={6} py={3} textAlign="center">
-              {header}
-            </Th>
-          )
-        )}
-      </Tr>
-    </Thead>
-    <Tbody>
-      {question.users.length > 0 ? (
-        question.users.map((user, idx) => (
-          <Tr
-            key={user.uid}
-            _hover={{ bg: "blue.50" }}
-            sx={{
-              "& td": {
-                border: "1px solid gray", // 🔥 Đảm bảo border hiển thị đầy đủ
-                px: 6,
-                py: 3,
-                textAlign: "center",
-              },
-            }}
-          >
-            <Td>{idx + 1}</Td>
-            <Td>{user.displayName || "N/A"}</Td>
-            <Td>{user.email || "N/A"}</Td>
-            <Td>{user.passedTestCases || "N/A"}</Td>
-            <Td>
-              <Icon
-                as={user.status ? FaCheckCircle : FaTimesCircle}
-                color={user.status ? "green.400" : "red.400"}
-                mr={2}
-              />
-              {user.status ? "Hoàn thành" : "Chưa hoàn thành"}
-            </Td>
-            <Td>
-              {user.timestamp
-                ? dayjs(user.timestamp.toDate()).format("DD/MM/YYYY HH:mm:ss")
-                : "N/A"}
-            </Td>
-            <Td>
-              {user.code ? (
-                <Button size="sm" colorScheme="teal" onClick={() => handlePreviewCode(user.code)}>
-                  Preview Code
-                </Button>
-              ) : (
-                "N/A"
-              )}
-            </Td>
-          </Tr>
-        ))
-      ) : (
-        <Tr>
-          <Td colSpan={7} textAlign="center" border="1px solid gray" px={6} py={3}>
-            Chưa có ai làm
-          </Td>
-        </Tr>
-      )}
-    </Tbody>
-  </Table>
-
-
+            <Table
+              // variant="striped"
+              colorScheme="gray"
+              size="sm"
+              borderWidth="1px"
+              borderCollapse="collapse" // 🔥 Thêm dòng này để hiển thị đầy đủ border
+            >
+              <Thead>
+                <Tr>
+                  {["STT", "Tên User", "Email", "Số lượng testcases hoàn thành", "Trạng thái", "Thời gian nộp", "Preview Code"].map(
+                    (header, idx) => (
+                      <Th key={idx} border="1px solid gray" px={6} py={3} textAlign="center">
+                        {header}
+                      </Th>
+                    )
+                  )}
+                </Tr>
+              </Thead>
+              <Tbody>
+                {question.users.length > 0 ? (
+                  question.users.map((user, idx) => (
+                    <Tr
+                      key={user.uid}
+                      _hover={{ bg: "blue.50" }}
+                      sx={{
+                        "& td": {
+                          border: "1px solid gray", // 🔥 Đảm bảo border hiển thị đầy đủ
+                          px: 6,
+                          py: 3,
+                          textAlign: "center",
+                        },
+                      }}
+                    >
+                      <Td>{idx + 1}</Td>
+                      <Td>{user.displayName || "N/A"}</Td>
+                      <Td>{user.email || "N/A"}</Td>
+                      <Td>{user.passedTestCases || "N/A"}</Td>
+                      <Td>
+                        <Icon
+                          as={user.status ? FaCheckCircle : FaTimesCircle}
+                          color={user.status ? "green.400" : "red.400"}
+                          mr={2}
+                        />
+                        {user.status ? "Hoàn thành" : "Chưa hoàn thành"}
+                      </Td>
+                      <Td>
+                        {user.timestamp
+                          ? dayjs(user.timestamp.toDate()).format("DD/MM/YYYY HH:mm:ss")
+                          : "N/A"}
+                      </Td>
+                      <Td>
+                        {user.code ? (
+                          <Button size="sm" colorScheme="teal" onClick={() => handlePreviewCode(user.code)}>
+                            Preview Code
+                          </Button>
+                        ) : (
+                          "N/A"
+                        )}
+                      </Td>
+                    </Tr>
+                  ))
+                ) : (
+                  <Tr>
+                    <Td colSpan={7} textAlign="center" border="1px solid gray" px={6} py={3}>
+                      Chưa có ai làm
+                    </Td>
+                  </Tr>
+                )}
+              </Tbody>
+            </Table>
             {index !== questions.length - 1 && <Divider my={6} />}
           </Box>
         ))
