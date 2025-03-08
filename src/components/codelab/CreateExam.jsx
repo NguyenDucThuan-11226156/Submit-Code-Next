@@ -19,9 +19,11 @@ export default function TeacherStats() {
 
   // Kiểm tra trạng thái xác thực từ localStorage khi component được tải
   useEffect(() => {
-    const storedAuth = localStorage.getItem("isAuthenticated");
-    if (storedAuth === "true") {
-      setIsAuthenticated(true);
+    if (typeof window !== "undefined") {
+      const storedAuth = localStorage.getItem("isAuthenticated");
+      if (storedAuth === "true") {
+        setIsAuthenticated(true);
+      }
     }
   }, []);
 

@@ -1,6 +1,9 @@
+"use client"
 import React from 'react';
 import { Modal, Input, Button, Form, Typography, message } from 'antd';
-import ReactQuill from "react-quill-new";
+import dynamic from "next/dynamic";
+
+const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 import "react-quill-new/dist/quill.snow.css"; 
 import { debounce } from 'lodash';
 import { useEffect } from 'react';
