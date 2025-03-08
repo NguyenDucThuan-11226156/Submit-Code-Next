@@ -143,8 +143,9 @@ function SelectQuestion() {
               question: q?.question,
               testcase: q?.testCases,
               title: q?.title,
+              language  : q?.language || "javascript",
+              teacher: q?.teacher || user.displayName,
               timestamp: q?.timestamp || Date.now(),
-              users: q?.users || [],
               sourceId: q.id, // lưu lại id của câu hỏi gốc
             });
           }
@@ -177,7 +178,7 @@ function SelectQuestion() {
         </Title>
       </Header>
       <Content style={{ padding: "20px" }}>
-        <Card title="Danh sách câu hỏi" bordered={false}>
+        <Card title="Danh sách câu hỏi" variant={false}>
           <List
             itemLayout="horizontal"
             dataSource={questions}

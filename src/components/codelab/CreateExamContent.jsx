@@ -35,6 +35,7 @@ import { usePathname } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { LANGUAGE_VERSIONS } from "@/constants";
 import { Select } from "@chakra-ui/react";
+import language from "react-syntax-highlighter/dist/esm/languages/hljs/1c";
 const { Title } = Typography;
 const { Sider, Content } = Layout;
 
@@ -78,6 +79,7 @@ const CreateExamContent = () => {
           title: doc.data().title,
           question: doc.data().question,
           testcase: doc.data().testCases || [], // Add test cases
+          language: doc.data().language || "javascript",
         }));
         setCreatedExams(examsList); // Update state with the latest data
       },
@@ -240,6 +242,7 @@ const CreateExamContent = () => {
             title: question.title,
             question: question.question,
             testCases: question.testCases,
+            teacher: user.uid,
             language: question.language || "javascript",
             timestamp: Date.now(),
           })
@@ -285,7 +288,7 @@ const CreateExamContent = () => {
         />
 
         <QuestionModal
-          visible={isModalVisible}
+          open={isModalVisible}
           question={currentQuestion}
           handleUpdateQuestion={handleUpdateQuestion}
           onClose={closeModal}
