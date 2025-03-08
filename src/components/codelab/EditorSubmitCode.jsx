@@ -1,5 +1,4 @@
 "use client";
-
 import {
   Box,
   HStack,
@@ -11,6 +10,15 @@ import {
   useColorModeValue,
   Avatar,
   Progress,
+  IconButton,
+  Drawer,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerHeader,
+  DrawerBody,
+  DrawerCloseButton,
+  useDisclosure,
+  Flex,
 } from "@chakra-ui/react";
 import {
   Modal,
@@ -31,7 +39,7 @@ import { useRef, useState, useEffect } from "react";
 import { getFirestore, collection, getDocs, onSnapshot, doc, getDoc } from "firebase/firestore";
 import { usePathname } from "next/navigation";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { CheckIcon } from "@chakra-ui/icons";
+import { CheckIcon, HamburgerIcon } from "@chakra-ui/icons";
 import ColorModeToggle from "./ColorModeToggle";
 import dayjs from "dayjs";
 import app from "../../firebase";
@@ -44,10 +52,10 @@ export default function CodeEditor() {
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [value, setValue] = useState("");
-  // State ngôn ngữ sẽ được lấy từ câu hỏi (được giáo viên tạo)
+  // Ngôn ngữ được lấy từ câu hỏi (do giáo viên tạo)
   const [language, setLanguage] = useState("java");
   const [questions, setQuestions] = useState([]);
-  const [selectedQuestion, setSelectedQuestion] = useState(null); // Câu hỏi đang được chọn
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [input, setInput] = useState("");
   const pathname = usePathname();
   const pathParts = pathname.split("/").filter(Boolean);
@@ -66,10 +74,11 @@ export default function CodeEditor() {
   const buttonBg = useColorModeValue("white", "gray.800");
   const placeholderColor = useColorModeValue("gray.500", "gray.400");
 
-  // Khi selectedQuestion thay đổi, nếu có trường language thì cập nhật editor
+  // Disclosure cho Drawer (sidebar)
+  const { isOpen: isDrawerOpen, onOpen: onDrawerOpen, onClose: onDrawerClose } = useDisclosure();
+
+  // Khi selectedQuestion thay đổi, cập nhật ngôn ngữ và code mẫu (nếu có)
   useEffect(() => {
-    console.log("Selected question changed:", selectedQuestion
-    );
     if (selectedQuestion && selectedQuestion.language) {
       setLanguage(selectedQuestion.language);
       setValue(CODE_SNIPPETS[selectedQuestion.language] || "");
@@ -86,50 +95,44 @@ export default function CodeEditor() {
     editor.focus();
   };
 
-  // Khi chọn câu hỏi từ sidebar, hiển thị thông tin câu hỏi
+  // Khi chọn câu hỏi từ sidebar
   const handleQuestionClick = (question) => {
     if (question && question.question) {
       setSelectedQuestion(question);
+      onDrawerClose(); // Đóng Drawer khi chọn câu hỏi
     }
   };
 
-  // Lấy thông tin người dùng và danh sách câu hỏi từ Firestore
+  // Lấy thông tin người dùng và danh sách câu hỏi real-time
   useEffect(() => {
     const auth = getAuth(app);
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-
       if (currentUser) {
         const db = getFirestore(app);
         const questionsRef = collection(db, "rooms", roomId, "onlineJudge", "contest", "questions");
-
-        // Lắng nghe thay đổi real-time trên Firestore
         const unsubscribeFirestore = onSnapshot(questionsRef, (snapshot) => {
           const updatedQuestions = snapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
           }));
           setQuestions(updatedQuestions);
-
           const completedCount = updatedQuestions.filter((q) =>
             q?.users?.some((userObj) => userObj.uid === currentUser.uid && userObj.status === true)
           ).length;
           setCompletedQuestions(completedCount);
         });
-
         return () => unsubscribeFirestore();
       }
     });
-
     return () => unsubscribeAuth();
   }, [roomId]);
 
-  // Lấy danh sách câu hỏi ban đầu từ Firestore
+  // Lấy danh sách câu hỏi ban đầu
   useEffect(() => {
     const fetchQuestions = async () => {
       const db = getFirestore(app);
       const contestCollectionRef = collection(db, "rooms", roomId, "onlineJudge", "contest", "questions");
-
       try {
         const querySnapshot = await getDocs(contestCollectionRef);
         const questionsList = querySnapshot.docs.map((doc) => ({
@@ -138,7 +141,7 @@ export default function CodeEditor() {
           question: doc.data().question,
           testCases: doc.data().testCases || [],
           users: doc.data().users || [],
-          language: doc.data().language, // Ngôn ngữ được chỉ định bởi giáo viên
+          language: doc.data().language,
         }));
         setQuestions(questionsList);
       } catch (error) {
@@ -146,7 +149,6 @@ export default function CodeEditor() {
         setQuestions([]);
       }
     };
-
     if (roomId) {
       fetchQuestions();
     }
@@ -168,6 +170,7 @@ export default function CodeEditor() {
 
   return (
     <>
+      {/* Header */}
       <Box
         bg={headerBg}
         color={textColor}
@@ -179,8 +182,13 @@ export default function CodeEditor() {
         borderBottomWidth="1px"
         borderColor={borderColor}
       >
-        {/* User Info */}
         <HStack>
+          <IconButton
+            aria-label="Open Sidebar"
+            icon={<HamburgerIcon />}
+            onClick={onDrawerOpen}
+            variant="ghost"
+          />
           <Avatar name={user?.displayName} size="md" bg={accentColor} />
           <VStack align="start">
             <Text fontSize="lg" fontWeight="bold" color={accentColor}>
@@ -191,84 +199,68 @@ export default function CodeEditor() {
             </Text>
           </VStack>
         </HStack>
-        {/* Progress */}
-        <ColorModeToggle />
-        <VStack align="start" spacing={1}>
-          <Text fontSize="md" color={accentColor}>
-            Progress: {completedQuestions}/{totalQuestions} completed
-          </Text>
-          <Progress
-            value={(completedQuestions / (totalQuestions || 1)) * 100}
-            size="sm"
-            colorScheme={colorMode === "dark" ? "blue" : "pink"}
-            w="200px"
-          />
-        </VStack>
+        <HStack spacing={4}>
+          <ColorModeToggle />
+          <VStack align="start" spacing={1}>
+            <Text fontSize="md" color={accentColor}>
+              Progress: {completedQuestions}/{totalQuestions} completed
+            </Text>
+            <Progress
+              value={(completedQuestions / (totalQuestions || 1)) * 100}
+              size="sm"
+              colorScheme={colorMode === "dark" ? "blue" : "pink"}
+              w="200px"
+            />
+          </VStack>
+        </HStack>
       </Box>
 
-      <Box display="flex" bg={bgColor} minHeight="100vh">
-        {/* Sidebar */}
-        <Box
-          w="20%"
-          borderRightWidth="1px"
-          borderColor={borderColor}
-          minHeight="100vh"
-          bg={headerBg}
-        >
-          <Text
-            fontSize="2.3rem"
-            fontWeight="bold"
-            mb={4}
-            pb={2}
-            borderBottomWidth="2px"
-            borderColor={borderColor}
-            textAlign="center"
-            color={textColor}
-          >
+      {/* Drawer Sidebar cho danh sách câu hỏi */}
+      <Drawer placement="left" onClose={onDrawerClose} isOpen={isDrawerOpen}>
+        <DrawerOverlay />
+        <DrawerContent bg={headerBg}>
+          <DrawerCloseButton />
+          <DrawerHeader borderBottomWidth="1px" color={textColor}>
             Questions
-          </Text>
-          {questions && questions.length > 0 ? (
-            questions.map((question) => {
-              const isCompleted = question?.users?.some(
-                (userObj) => userObj.uid === user?.uid && userObj.status === true
-              );
-              return (
-                <Button
-                  key={question.id}
-                  variant="ghost"
-                  w="100%"
-                  onClick={() => handleQuestionClick(question)}
-                  mb={2}
-                  justifyContent="flex-start"
-                  textAlign="left"
-                  whiteSpace="normal"
-                  _hover={{ bg: hoverBg }}
-                  bg={buttonBg}
-                  color={textColor}
-                  rightIcon={isCompleted ? <CheckIcon color="green.500" /> : null}
-                >
-                  {question.title}
-                </Button>
-              );
-            })
-          ) : (
-            <Text color="gray.500">No questions available</Text>
-          )}
-        </Box>
+          </DrawerHeader>
+          <DrawerBody>
+            {questions && questions.length > 0 ? (
+              questions.map((question) => {
+                const isCompleted = question?.users?.some(
+                  (userObj) => userObj.uid === user?.uid && userObj.status === true
+                );
+                return (
+                  <Button
+                    key={question.id}
+                    variant="ghost"
+                    w="100%"
+                    onClick={() => handleQuestionClick(question)}
+                    mb={2}
+                    justifyContent="flex-start"
+                    textAlign="left"
+                    whiteSpace="normal"
+                    _hover={{ bg: hoverBg }}
+                    bg={buttonBg}
+                    color={textColor}
+                    rightIcon={isCompleted ? <CheckIcon color="green.500" /> : null}
+                  >
+                    {question.title}
+                  </Button>
+                );
+              })
+            ) : (
+              <Text color="gray.500">No questions available</Text>
+            )}
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
 
-        {/* Editor Section */}
-        <Box
-          w="80%"
-          p={4}
-          bg={headerBg}
-          borderRadius="md"
-          boxShadow="xl"
-          borderWidth="1px"
-          borderColor={borderColor}
-          m={4}
-        >
+      {/* Main Content */}
+      <Box display="flex" bg={bgColor} minHeight="100vh" p={4}>
+        {/* Phần hiển thị nội dung câu hỏi và Input (bên trái) */}
+        <Box flex="1" mr={4}>
           {selectedQuestion ? (
-            <Box mb={4} borderBottomWidth="2px" borderColor={accentColor}>
+            <Box mb={4} borderBottomWidth="2px" borderColor={accentColor} pb={4}>
               <Text fontSize="xl" fontWeight="bold" color={accentColor}>
                 {selectedQuestion.title}
               </Text>
@@ -279,65 +271,60 @@ export default function CodeEditor() {
                 color={textColor}
                 dangerouslySetInnerHTML={{ __html: selectedQuestion.question }}
               />
-              {/* Hiển thị ngôn ngữ hiện tại */}
               {language && (
                 <Text fontSize="md" mt={2} color={accentColor}>
                   Currently coding in: {language}
                 </Text>
               )}
+              <Box mt={4}>
+                <Text fontSize="lg" mb={2} color={accentColor}>
+                  Input
+                </Text>
+                <Textarea
+                  placeholder="Enter input for your code..."
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  size="sm"
+                  bg={useColorModeValue("gray.100", "gray.700")}
+                  color={textColor}
+                  _placeholder={{ color: placeholderColor }}
+                />
+              </Box>
             </Box>
           ) : (
-            <Text color="gray.500">
-              Select a question to view and edit the code
-            </Text>
+            <Text color="gray.500">Select a question to view its details</Text>
           )}
+        </Box>
 
+        {/* Phần Editor (bên phải) */}
+        <Box flex="1" borderRadius="md" boxShadow="xl" borderWidth="1px" borderColor={borderColor}>
           <Editor
             options={{ minimap: { enabled: false } }}
-            height="50vh"
+            height="70vh"
             theme={editorTheme}
             language={language}
             value={value}
             onMount={onMount}
-            onChange={(value) => setValue(value)}
+            onChange={(val) => setValue(val)}
           />
-
-          {/* Input Field */}
-          <Box mt={4} mb={2}>
-            <Text fontSize="lg" mb={2} color={accentColor}>
-              Input
-            </Text>
-            <Textarea
-              placeholder="Enter input for your code..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              size="sm"
-              bg={useColorModeValue("gray.100", "gray.700")}
-              color={textColor}
-              _placeholder={{ color: placeholderColor }}
-            />
-          </Box>
-
-          {/* Output Component */}
           <Box mt={4}>
             <Text>Output will be displayed here.</Text>
-            <Output 
-            roomId={roomId} 
-            editorRef={editorRef} 
-            language={language} 
-            input={input} 
-            selectedQuestion={selectedQuestion} 
-          />
+            <Output
+              roomId={roomId}
+              editorRef={editorRef}
+              language={language}
+              input={input}
+              selectedQuestion={selectedQuestion}
+            />
           </Box>
         </Box>
       </Box>
 
       {/* Submissions & Code Preview Modal */}
-      <Box mt={8}>
+      <Box mt={8} p={4}>
         <Text fontSize="xl" fontWeight="bold" mb={4}>
           Lịch sử nộp bài
         </Text>
-        {/* Giả sử submissions được xử lý ở đây */}
         <Text>Submission history here</Text>
       </Box>
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} size="6xl">
@@ -347,7 +334,7 @@ export default function CodeEditor() {
           <ModalCloseButton />
           <ModalBody>
             <Box bg="gray.900" color="white" p={4} borderRadius="md" overflowX="auto">
-              <pre>{submissions.code}</pre>
+              <pre>{selectedSubmission?.code}</pre>
             </Box>
           </ModalBody>
           <ModalFooter>
