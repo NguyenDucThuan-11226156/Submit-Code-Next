@@ -153,7 +153,7 @@ export default function CodeEditor() {
       fetchQuestions();
     }
   }, [roomId]);
-
+console.log(selectedSubmission)
   // Lưu code vào localStorage theo câu hỏi
   useEffect(() => {
     if (selectedQuestion) {
