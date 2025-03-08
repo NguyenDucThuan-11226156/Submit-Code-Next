@@ -36,6 +36,7 @@ import ColorModeToggle from "./ColorModeToggle";
 import dayjs from "dayjs";
 import app from "../../firebase";
 import { CODE_SNIPPETS } from "../../constants";
+import Output from "./Output";
 
 export default function CodeEditor() {
   const editorRef = useRef();
@@ -44,7 +45,7 @@ export default function CodeEditor() {
   const [submissions, setSubmissions] = useState([]);
   const [value, setValue] = useState("");
   // State ngôn ngữ sẽ được lấy từ câu hỏi (được giáo viên tạo)
-  const [language, setLanguage] = useState("javascript");
+  const [language, setLanguage] = useState("java");
   const [questions, setQuestions] = useState([]);
   const [selectedQuestion, setSelectedQuestion] = useState(null); // Câu hỏi đang được chọn
   const [input, setInput] = useState("");
@@ -320,6 +321,13 @@ export default function CodeEditor() {
           {/* Output Component */}
           <Box mt={4}>
             <Text>Output will be displayed here.</Text>
+            <Output 
+            roomId={roomId} 
+            editorRef={editorRef} 
+            language={language} 
+            input={input} 
+            selectedQuestion={selectedQuestion} 
+          />
           </Box>
         </Box>
       </Box>
