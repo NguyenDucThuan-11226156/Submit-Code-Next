@@ -286,14 +286,15 @@ const CreateExamContent = () => {
           ]}
         />
 
-        <QuestionModal
-          open={isModalVisible}
-          question={currentQuestion}
-          handleUpdateQuestion={handleUpdateQuestion}
-          onClose={closeModal}
-          onUpdate={setCurrentQuestion}
-          handleDeleteQuestion={handleDeleteQuestion}
-        />
+      <QuestionModal
+        visible={isModalVisible} // dùng visible thay vì open
+        question={currentQuestion}
+        handleUpdateQuestion={handleUpdateQuestion}
+        onClose={closeModal}
+        onUpdate={setCurrentQuestion}
+        handleDeleteQuestion={handleDeleteQuestion}
+      />
+
       </Sider>
       <Layout>
         <Content
