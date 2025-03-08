@@ -3,44 +3,45 @@
 import { useState, useEffect } from "react";
 import { useParams, usePathname } from "next/navigation";
 import Link from "next/link";
-import { 
-  getFirestore, 
-  collection, 
-  getDocs, 
-  doc, 
-  setDoc, 
-  addDoc, 
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  doc,
+  setDoc,
+  addDoc,
   deleteDoc,
-  getDoc 
+  getDoc,
 } from "firebase/firestore";
 import { auth } from "@/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { 
-  Layout, 
-  Card, 
-  Checkbox, 
-  Button, 
-  Spin, 
-  message, 
-  List, 
-  Row, 
-  Col, 
-  Typography, 
-  Tooltip 
+import {
+  Layout,
+  Card,
+  Checkbox,
+  Button,
+  Spin,
+  message,
+  List,
+  Row,
+  Col,
+  Typography,
+  Tooltip,
 } from "antd";
 import app from "@/firebase";
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
+
 function SelectQuestion() {
   const { slug } = useParams(); // Mã phòng từ URL
   const [questions, setQuestions] = useState([]);
   // Lưu trữ danh sách các question.id đã được lưu trong Firebase
-  const [selectedQuestions, setSelectedQuestions] = useState([]); 
+  const [selectedQuestions, setSelectedQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const pathname = usePathname();
-  const pathParts = pathname.split("/");
+  const pathParts = pathname.split("/").filter(Boolean);
   const roomId = pathParts[1]; // Thay đổi logic này nếu cấu trúc URL khác
 
   // Lắng nghe trạng thái đăng nhập
@@ -81,10 +82,19 @@ function SelectQuestion() {
     const fetchSelectedQuestions = async () => {
       try {
         const db = getFirestore(app);
-        const questionsCollectionRef = collection(db, "rooms", slug, "onlineJudge", "contest", "questions");
+        const questionsCollectionRef = collection(
+          db,
+          "rooms",
+          slug,
+          "onlineJudge",
+          "contest",
+          "questions"
+        );
         const querySnapshot = await getDocs(questionsCollectionRef);
         // Lấy ra sourceId của từng document lưu trong sub-collection
-        const selected = querySnapshot.docs.map((docSnap) => docSnap.data().sourceId);
+        const selected = querySnapshot.docs.map(
+          (docSnap) => docSnap.data().sourceId
+        );
         setSelectedQuestions(selected);
       } catch (error) {
         console.error("Lỗi lấy các câu hỏi đã tick:", error);
@@ -123,7 +133,14 @@ function SelectQuestion() {
       }
 
       // 3. Lấy reference đến sub-collection "questions"
-      const questionsCollectionRef = collection(db, "rooms", slug, "onlineJudge", "contest", "questions");
+      const questionsCollectionRef = collection(
+        db,
+        "rooms",
+        slug,
+        "onlineJudge",
+        "contest",
+        "questions"
+      );
 
       // Lấy tất cả các document hiện có trong sub-collection "questions"
       const querySnapshot = await getDocs(questionsCollectionRef);
@@ -136,7 +153,9 @@ function SelectQuestion() {
       });
 
       // Lấy danh sách câu hỏi được chọn (dựa trên selectedQuestions)
-      const selectedQuestionsData = questions.filter(q => selectedQuestions.includes(q.id));
+      const selectedQuestionsData = questions.filter((q) =>
+        selectedQuestions.includes(q.id)
+      );
 
       // Thêm mới các câu hỏi được chọn mà chưa tồn tại trong Firebase
       await Promise.all(
@@ -146,7 +165,7 @@ function SelectQuestion() {
               question: q?.question,
               testCases: q?.testCases,
               title: q?.title,
-              language  : q?.language || "javascript",
+              language: q?.language || "javascript",
               teacher: q?.teacher || user.displayName,
               timestamp: q?.timestamp || Date.now(),
               sourceId: q.id, // lưu lại id của câu hỏi gốc
@@ -159,7 +178,17 @@ function SelectQuestion() {
       await Promise.all(
         Object.keys(existingDocs).map(async (sourceId) => {
           if (!selectedQuestions.includes(sourceId)) {
-            await deleteDoc(doc(db, "rooms", slug, "onlineJudge", "contest", "questions", existingDocs[sourceId].id));
+            await deleteDoc(
+              doc(
+                db,
+                "rooms",
+                slug,
+                "onlineJudge",
+                "contest",
+                "questions",
+                existingDocs[sourceId].id
+              )
+            );
           }
         })
       );
@@ -174,36 +203,60 @@ function SelectQuestion() {
   if (loading) return <Spin tip="Đang tải dữ liệu..." />;
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
-      <Header style={{ backgroundColor: "#1890ff", padding: "0 20px" }}>
+    <Layout style={{ minHeight: "100vh", background: "#f0f2f5" }}>
+      {/* Header */}
+      <Header
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(24,144,255,1) 0%, rgba(0,212,255,1) 100%)",
+          padding: "0 30px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
         <Title level={2} style={{ color: "#fff", margin: 0 }}>
           Chọn câu hỏi cho phòng {slug}
         </Title>
+        <div>
+          <Button type="primary" style={{ marginRight: 10 }}>
+            <Link href={`/${roomId}/statistic`}>Statistic</Link>
+          </Button>
+          <Button type="primary">
+            <Link href={`/${roomId}/editor`}>Editor</Link>
+          </Button>
+        </div>
       </Header>
-      <div className="d-flex gap-2">
-        <Button>
-          <Link href={`/${roomId}/statistic`}>
-            Statistic
-          </Link>
-        </Button>
-        <Button>
-          <Link href={`/${roomId}/editor`}>Editor</Link>
-        </Button>
-      </div>
-      <Content style={{ padding: "20px" }}>
-        <Card title="Danh sách câu hỏi" variant={false}>
+
+      {/* Content */}
+      <Content style={{ padding: "30px" }}>
+        <Card
+          title={<Title level={4}>Danh sách câu hỏi</Title>}
+          bordered={false}
+          style={{
+            borderRadius: 8,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            marginBottom: 30,
+          }}
+        >
           <List
             itemLayout="horizontal"
             dataSource={questions}
             renderItem={(question) => (
-              <List.Item>
+              <List.Item style={{ padding: "10px 0" }}>
                 <Tooltip
                   placement="right"
-                  title={<div dangerouslySetInnerHTML={{ __html: question.question }} />}
+                  title={
+                    <div
+                      style={{ maxWidth: 300 }}
+                      dangerouslySetInnerHTML={{ __html: question.question }}
+                    />
+                  }
                 >
                   <Checkbox
                     checked={selectedQuestions.includes(question.id)}
                     onChange={() => handleSelect(question.id)}
+                    style={{ fontSize: 16 }}
                   >
                     {question.title}
                   </Checkbox>
@@ -212,19 +265,24 @@ function SelectQuestion() {
             )}
           />
         </Card>
-        <Row justify="center" style={{ marginTop: "20px" }}>
+        <Row justify="center">
           <Col>
             <Button
               type="primary"
               size="large"
               onClick={handleSaveSelection}
+              style={{ padding: "0 30px", height: 50, fontSize: 16 }}
             >
               Lưu bài tập vào phòng
             </Button>
           </Col>
         </Row>
       </Content>
-      <Footer style={{ textAlign: "center" }}>Teacher's Portal ©2025</Footer>
+
+      {/* Footer */}
+      <Footer style={{ textAlign: "center", background: "#fff" }}>
+        Teacher's Portal ©2025
+      </Footer>
     </Layout>
   );
 }
