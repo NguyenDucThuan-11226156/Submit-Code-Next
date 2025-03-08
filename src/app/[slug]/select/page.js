@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
+import Link from "next/link";
 import { 
   getFirestore, 
   collection, 
@@ -31,7 +32,6 @@ import app from "@/firebase";
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
-
 function SelectQuestion() {
   const { slug } = useParams(); // Mã phòng từ URL
   const [questions, setQuestions] = useState([]);
@@ -39,6 +39,9 @@ function SelectQuestion() {
   const [selectedQuestions, setSelectedQuestions] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const pathname = usePathname();
+  const pathParts = pathname.split("/");
+  const roomId = pathParts[1]; // Thay đổi logic này nếu cấu trúc URL khác
 
   // Lắng nghe trạng thái đăng nhập
   useEffect(() => {
@@ -177,6 +180,16 @@ function SelectQuestion() {
           Chọn câu hỏi cho phòng {slug}
         </Title>
       </Header>
+      <div className="d-flex gap-2">
+        <Button>
+          <Link href={`/${roomId}/statistic`}>
+            Statistic
+          </Link>
+        </Button>
+        <Button>
+          <Link href={`/${roomId}/editor`}>Editor</Link>
+        </Button>
+      </div>
       <Content style={{ padding: "20px" }}>
         <Card title="Danh sách câu hỏi" variant={false}>
           <List

@@ -35,7 +35,6 @@ import { usePathname } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { LANGUAGE_VERSIONS } from "@/constants";
 import { Select } from "@chakra-ui/react";
-import language from "react-syntax-highlighter/dist/esm/languages/hljs/1c";
 const { Title } = Typography;
 const { Sider, Content } = Layout;
 
@@ -309,16 +308,7 @@ const CreateExamContent = () => {
             <Title level={2} style={{ color: "#333" }}>
               Create Exam
             </Title>
-            <div className="d-flex gap-2">
-              <Button>
-                <Link href={`/${roomId}/onlineJudge/statistic`}>
-                  Statistic
-                </Link>
-              </Button>
-              <Button>
-                <Link href={`/${roomId}/editor`}>Editor</Link>
-              </Button>
-            </div>
+            
           </div>
           <Form onSubmitCapture={handleSubmit} layout="vertical">
             {questions.map((q, index) => (
