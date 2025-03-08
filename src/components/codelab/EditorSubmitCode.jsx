@@ -102,8 +102,47 @@ export default function CodeEditor() {
       onDrawerClose(); // Đóng Drawer khi chọn câu hỏi
     }
   };
-
-  // Lấy thông tin người dùng và danh sách câu hỏi real-time
+  useEffect(() => {
+    const fetchUserSubmission = async () => {
+      if (!user || !selectedQuestion || !roomId) return;
+      const db = getFirestore(app);
+      const questionRef = doc(
+        db,
+        "rooms",
+        roomId,
+        "onlineJudge",
+        "contest",
+        "questions",
+        selectedQuestion.id
+      );
+      try {
+        const questionSnap = await getDoc(questionRef);
+        if (questionSnap.exists()) {
+          const questionData = questionSnap.data();
+          console.log("Question Data:", questionData);
+          // Lọc danh sách users để tìm user hiện tại
+          const userSubmission = questionData.users?.find(
+            (u) => u.uid === user.uid
+          );
+          if (userSubmission) {
+            console.log("User Submission:", userSubmission);
+            setSubmissions(userSubmission);
+          } else {
+            console.log("User chưa có bài nộp");
+            setSubmissions(null);
+          }
+        } else {
+          console.log("Câu hỏi không tồn tại");
+          setSubmissions(null);
+        }
+      } catch (error) {
+        console.error("Error fetching user submission:", error);
+        setSubmissions(null);
+      }
+    };
+    fetchUserSubmission();
+  }, [user, selectedQuestion, roomId]);
+  
   useEffect(() => {
     const auth = getAuth(app);
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
@@ -153,7 +192,7 @@ export default function CodeEditor() {
       fetchQuestions();
     }
   }, [roomId]);
-
+console.log(selectedSubmission)
   // Lưu code vào localStorage theo câu hỏi
   useEffect(() => {
     if (selectedQuestion) {
@@ -321,29 +360,57 @@ export default function CodeEditor() {
       </Box>
 
       {/* Submissions & Code Preview Modal */}
-      <Box mt={8} p={4}>
-        <Text fontSize="xl" fontWeight="bold" mb={4}>
-          Lịch sử nộp bài
-        </Text>
-        <Text>Submission history here</Text>
-      </Box>
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} size="6xl">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Mã nguồn đã nộp</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Box bg="gray.900" color="white" p={4} borderRadius="md" overflowX="auto">
-              <pre>{selectedSubmission?.code}</pre>
-            </Box>
-          </ModalBody>
-          <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={() => setIsModalOpen(false)}>
-              Đóng
+      <Box mt={8}>
+  <Text fontSize="xl" fontWeight="bold" mb={4}>
+    Lịch sử nộp bài
+  </Text>
+  {submissions && Object.keys(submissions).length > 0 ? (
+  <Tabs variant="enclosed">
+    <TabList>
+      {[submissions].map((submission) => (
+        submission?.timestamp ? (
+          <Tab key={submission.timestamp.seconds}>
+            {dayjs(submission.timestamp.toDate()).format("DD/MM/YYYY HH:mm:ss")}
+          </Tab>
+        ) : null
+      ))}
+    </TabList>
+    <TabPanels>
+      {[submissions].map((submission) => (
+        submission?.timestamp ? (
+          <TabPanel key={submission.timestamp.seconds}>
+            <Button colorScheme="blue" onClick={() => openCodePreview(submission)}>
+              Xem trước
             </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          </TabPanel>
+        ) : null
+      ))}
+    </TabPanels>
+  </Tabs>
+) : (
+  <Text>Không tìm thấy lịch sử nộp bài.</Text>
+)}
+
+
+</Box>
+<Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} size="6xl">
+  <ModalOverlay />
+  <ModalContent>
+    <ModalHeader>Mã nguồn đã nộp</ModalHeader>
+    <ModalCloseButton />
+    <ModalBody>
+    <Box bg="gray.900" color="white" p={4} borderRadius="md" overflowX="auto">
+      <pre>{submissions.code}</pre>
+    </Box>
+
+    </ModalBody>
+    <ModalFooter>
+      <Button colorScheme="blue" mr={3} onClick={() => setIsModalOpen(false)}>
+        Đóng
+      </Button>
+    </ModalFooter>
+  </ModalContent>
+</Modal>
     </>
   );
 }
