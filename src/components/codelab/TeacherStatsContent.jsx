@@ -22,10 +22,9 @@ import {
   ModalBody,
   ModalFooter,
   HStack,
-  Spacer,
   Center,
 } from "@chakra-ui/react";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getFirestore, collection, getDocs, getDoc, doc } from "firebase/firestore";
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -48,7 +47,6 @@ import {
 } from "react-icons/fa";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
-import { result } from "lodash";
 // Đăng ký các thành phần của Chart.js
 ChartJS.register(
   CategoryScale,
@@ -66,6 +64,7 @@ export default function TeacherStatsContent() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedCode, setSelectedCode] = useState("");
   const [isChecking, setIsChecking] = useState(false);
+  const [listStudents, setListStudents] = useState([]);
   const pathname = usePathname();
   const pathParts = pathname.split("/");
   const roomId = pathParts[1]; // Thay đổi logic này nếu cấu trúc URL khác
@@ -81,14 +80,23 @@ export default function TeacherStatsContent() {
         "contest",
         "questions"
       );
+      const roomDocRef = doc(db, "rooms", roomId);
       try {
-        const querySnapshot = await getDocs(contestCollectionRef);
-        const questionsList = querySnapshot.docs.map((doc) => ({
+        const [questionsSnapshot, roomSnap] = await Promise.all([
+          getDocs(contestCollectionRef),
+          getDoc(roomDocRef)
+        ]);
+        const questionsList = questionsSnapshot.docs.map((doc) => ({
           id: doc.id,
           title: doc.data().title,
           users: doc.data().users || [],
         }));
         setQuestions(questionsList);
+        if (roomSnap.exists()) {
+          const roomData = roomSnap.data();
+          console.log("Room data:", roomData);
+          setListStudents(roomData.members || []);
+        }
       } catch (error) {
         console.error("Lỗi khi lấy dữ liệu câu hỏi:", error);
         setQuestions([]);
@@ -126,14 +134,15 @@ export default function TeacherStatsContent() {
 
   saveAs(data, `${question.title}_statistics.xlsx`);
 };
+
   // Dữ liệu cho biểu đồ
   const chartData = {
     labels: questions.map((q) => q.title),
     datasets: [
       {
         label: "Số sinh viên hoàn thành",
-        data: questions.map(
-          (q) => q.users.filter((user) => user.status === true).length
+        data: questions?.map(
+          (q) => q?.users?.filter((user) => user.status === true).length
         ),
         backgroundColor: "rgba(54, 162, 235, 0.6)",
         borderColor: "rgba(54, 162, 235, 1)",
@@ -170,13 +179,12 @@ export default function TeacherStatsContent() {
     setSelectedCode(code);
     onOpen();
   };
-  const handleCheckCode = ()=>{
-
-  }
+ 
   const checkCode = async (question) => {
     try {
       setIsChecking(true);
       const response = await fetch("https://fit.neu.edu.vn/codelab/api/save-user-codes", {
+        // const response = await fetch("http://localhost:8015/api/save-user-codes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -190,18 +198,15 @@ export default function TeacherStatsContent() {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-  
       setIsChecking(false);
-  
       // Mở kết quả trong tab mới
       window.open(`https://fit.neu.edu.vn/codelab/results/${roomId}/${question.id}/index.html`, "_blank");
+      // window.open(`http://localhost:8015/results/${roomId}/${question.id}/index.html`, "_blank");
     } catch (error) {
       console.error("Lỗi khi gửi yêu cầu kiểm tra mã:", error);
       alert("Kiểm tra thất bại: " + error.message);
     }
   };
-  
-  
   return (
     <Box
       p={6}
@@ -229,146 +234,144 @@ export default function TeacherStatsContent() {
 
       {/* Bảng thống kê chi tiết */}
       {questions.length > 0 ? (
-        questions.map((question, index) => (
-          <Box
-            key={question.id}
-            mt={6}
-            p={4}
-            bg="white"
-            borderRadius="md"
-            boxShadow="lg"
-            mb={6}
-          >
-            <Text fontSize="xl" fontWeight="bold" mb={2} color="blue.700">
-              <Icon as={FaInfoCircle} mr={2} /> {question.title}
-            </Text>
-            <HStack justify="flex-end" mb={4} spacing={1}>
-              <Button
-                leftIcon={<Icon as={FaFileExcel} />}
-                colorScheme="green"
-                size="md"
-                px={6}
-                py={3}
-                fontWeight="bold"
-                borderRadius="lg"
-                _hover={{ bg: "green.600" }}
-                _active={{ bg: "green.700" }}
-                onClick={() => exportToExcel(question)}
-              >
-                Xuất Excel
-              </Button>
-
-              <Button
-                leftIcon={<Icon as={FaCheckCircle} />}
-                colorScheme="blue"
-                size="md"
-                px={6}
-                py={3}
-                fontWeight="bold"
-                borderRadius="lg"
-                _hover={{ bg: "blue.600" }}
-                _active={{ bg: "blue.700" }}
-                onClick={() => checkCode(question)}
-              >
-                Kiểm tra
-              </Button>
-            </HStack>
-              {/* Spinner khi đang kiểm tra */}
-              {isChecking && (
-                <Center
-                  position="fixed"
-                  top="0"
-                  left="0"
-                  width="100vw"
-                  height="100vh"
-                  backgroundColor="rgba(0, 0, 0, 0.5)"
-                  zIndex="9999"
-                >
-                  <Spinner size="xl" color="white" thickness="4px" speed="0.65s" />
-                </Center>
-              )}
-            <Table
-              variant="striped"
-              border="1px solid gray"
-              colorScheme="gray" // Thêm dòng này
-              borderWidth="1px"
-              size="sm"
+        questions.map((question, index) => {
+          const missingStudents = listStudents.filter(
+            (student) =>
+              !question.users.some((user) => user.email === student.studentCode)
+          );
+          return (
+            <Box
+              key={question.id}
+              mt={6}
+              p={4}
+              bg="white"
+              borderRadius="md"
+              boxShadow="lg"
+              mb={6}
             >
-              <Thead>
-                <Tr>
-                  <Th border="1px solid gray" px={6} py={3} textAlign="center">
-                    STT
-                  </Th>
-                  <Th border="1px solid gray" px={6} py={3} textAlign="center">
-                    Tên User
-                  </Th>
-                  <Th border="1px solid gray" px={6} py={3} textAlign="center">
-                    Email
-                  </Th>
-                  <Th border="1px solid gray" px={6} py={3} textAlign="center">
-                    Số lượng testcases hoàn thành
-                  </Th>
-                  <Th border="1px solid gray" px={6} py={3} textAlign="center">
-                    Trạng thái
-                  </Th>
-                  <Th border="1px solid gray" px={6} py={3} textAlign="center">
-                    Thời gian nộp
-                  </Th>
-                  <Th border="1px solid gray" px={6} py={3} textAlign="center">
-                    Preview Code
-                  </Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-  {question.users.length > 0 ? (
-    question.users.map((user, idx) => (
-      <Tr key={user.uid} _hover={{ bg: "blue.50" }} bg={idx % 2 === 0 ? "gray.800" : "white"}>
-        <Td color={idx % 2 === 0 ? "white" : "black"} border="1px solid gray" px={6} py={3} textAlign="center">
-          {idx + 1}
-        </Td>
-        <Td color={idx % 2 === 0 ? "white" : "black"} border="1px solid gray" px={6} py={3} textAlign="center">
-          {user.displayName || "N/A"}
-        </Td>
-        <Td color={idx % 2 === 0 ? "white" : "black"} border="1px solid gray" px={6} py={3} textAlign="center">
-          {user.email || "N/A"}
-        </Td>
-        <Td color={idx % 2 === 0 ? "white" : "black"} border="1px solid gray" px={6} py={3} textAlign="center">
-          {user.passedTestCases || "N/A"}
-        </Td>
-        <Td color={idx % 2 === 0 ? "white" : "black"} border="1px solid gray" px={6} py={3} textAlign="center">
-          <Icon as={user.status ? FaCheckCircle : FaTimesCircle} color={user.status ? "green.400" : "red.400"} mr={2} />
-          {user.status ? "Hoàn thành" : "Chưa hoàn thành"}
-        </Td>
-        <Td color={idx % 2 === 0 ? "white" : "black"} border="1px solid gray" px={6} py={3} textAlign="center">
-          {user.timestamp
-            ? dayjs(user.timestamp.toDate()).format("DD/MM/YYYY HH:mm:ss")
-            : "N/A"}
-        </Td>
-        <Td color={idx % 2 === 0 ? "white" : "black"} border="1px solid gray" px={6} py={3} textAlign="center">
-          {user.code ? (
-            <Button size="sm" colorScheme="teal" onClick={() => handlePreviewCode(user.code)}>
-              Preview Code
-            </Button>
-          ) : (
-            "N/A"
-          )}
-        </Td>
-      </Tr>
-    ))
-  ) : (
-    <Tr>
-      <Td colSpan={7} textAlign="center" border="1px solid gray" px={6} py={3}>
-        Chưa có ai làm
-      </Td>
-    </Tr>
-  )}
-</Tbody>
-
-
-            </Table>
-            {index !== questions.length - 1 && <Divider my={6} />}
-          </Box>
-        ))
+              <Text fontSize="xl" fontWeight="bold" mb={2} color="blue.700">
+                <Icon as={FaInfoCircle} mr={2} /> {question.title}
+              </Text>
+              <HStack justify="flex-end" mb={4} spacing={1}>
+                <Button
+                  leftIcon={<Icon as={FaFileExcel} />}
+                  colorScheme="green"
+                  size="md"
+                  onClick={() => exportToExcel(question)}
+                >
+                  Xuất Excel
+                </Button>
+                <Button
+                  leftIcon={<Icon as={FaCheckCircle} />}
+                  colorScheme="blue"
+                  size="md"
+                  onClick={() => checkCode(question)}
+                >
+                  Kiểm tra
+                </Button>
+              </HStack>
+        
+              <Table
+              color={"black"}
+                colorScheme="gray"
+                size="sm"
+                borderWidth="1px"
+                borderCollapse="collapse"
+              >
+                <Thead>
+                  <Tr>
+                    {[
+                      "STT",
+                      "Tên User",
+                      "Email",
+                      "Số lượng testcases hoàn thành",
+                      "Trạng thái",
+                      "Thời gian nộp",
+                      "Preview Code",
+                    ].map((header, idx) => (
+                      <Th key={idx} border="1px solid gray" px={6} py={3} textAlign="center">
+                        {header}
+                      </Th>
+                    ))}
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {question.users.length > 0 ? (
+                    question.users.map((user, idx) => (
+                      <Tr
+                        key={user.uid}
+                        _hover={{ bg: "blue.50" }}
+                        sx={{
+                          "& td": {
+                            border: "1px solid gray",
+                            px: 6,
+                            py: 3,
+                            textAlign: "center",
+                          },
+                        }}
+                      >
+                        <Td>{idx + 1}</Td>
+                        <Td>{user.displayName || "N/A"}</Td>
+                        <Td>{user.email || "N/A"}</Td>
+                        <Td>{user.passedTestCases || "N/A"}</Td>
+                        <Td>
+                          <Icon
+                            as={user.status ? FaCheckCircle : FaTimesCircle}
+                            color={user.status ? "green.400" : "red.400"}
+                            mr={2}
+                          />
+                          {user.status ? "Hoàn thành" : "Chưa hoàn thành"}
+                        </Td>
+                        <Td>
+                          {user.timestamp
+                            ? dayjs(user.timestamp.toDate()).format("DD/MM/YYYY HH:mm:ss")
+                            : "N/A"}
+                        </Td>
+                        <Td>
+                          {user.code ? (
+                            <Button
+                              size="sm"
+                              colorScheme="teal"
+                              onClick={() => handlePreviewCode(user.code)}
+                            >
+                              Preview Code
+                            </Button>
+                          ) : (
+                            "N/A"
+                          )}
+                        </Td>
+                      </Tr>
+                    ))
+                  ) : (
+                    <Tr>
+                      <Td colSpan={7} textAlign="center" border="1px solid gray" px={6} py={3}>
+                        Chưa có ai làm
+                      </Td>
+                    </Tr>
+                  )}
+                </Tbody>
+              </Table>
+        
+              {/* Hiển thị danh sách sinh viên chưa làm bài */}
+              {missingStudents.length > 0 ? (
+                <Box mt={4} p={2} bg="red.50" borderRadius="md">
+                  <Text fontSize="md" color="red.600">
+                    Sinh viên chưa làm bài:{" "}
+                    {missingStudents.map((student) => student.fullName).join(", ")}
+                  </Text>
+                </Box>
+              ) : (
+                <Box mt={4} p={2} bg="green.50" borderRadius="md">
+                  <Text fontSize="md" color="green.600">
+                    Tất cả sinh viên đều đã làm bài!
+                  </Text>
+                </Box>
+              )}
+        
+              {index !== questions.length - 1 && <Divider my={6} />}
+            </Box>
+          );
+      })
       ) : (
         <Text fontSize="lg" color="red.500" textAlign="center">
           Không có câu hỏi nào để hiển thị!
