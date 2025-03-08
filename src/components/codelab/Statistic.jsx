@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import {
   Box,
@@ -6,16 +7,24 @@ import {
   Button,
   Text,
   VStack,
+  ChakraProvider,
+  theme,
 } from "@chakra-ui/react";
 import { FaLock } from "react-icons/fa";
 import TeacherStatsContent from "./TeacherStatsContent";
 
 export default function TeacherStats() {
+  const [mounted, setMounted] = useState(false);
   const [password, setPassword] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Kiểm tra trạng thái từ localStorage
+  // Delay render cho đến khi component được mount trên client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Kiểm tra trạng thái từ localStorage (chỉ chạy trên client)
   useEffect(() => {
     const storedAuth = localStorage.getItem("isAuthenticated");
     if (storedAuth === "true") {
@@ -28,7 +37,7 @@ export default function TeacherStats() {
     setTimeout(() => {
       if (password === "@smartdoc") {
         setIsAuthenticated(true);
-        localStorage.setItem("isAuthenticated", "true"); // Lưu trạng thái vào localStorage
+        localStorage.setItem("isAuthenticated", "true");
       } else {
         alert("Sai mật khẩu! Vui lòng thử lại.");
         setPassword("");
@@ -36,6 +45,9 @@ export default function TeacherStats() {
       setLoading(false);
     }, 1000);
   };
+
+  // Nếu component chưa được mount, trả về null để tránh hydration mismatch
+  if (!mounted) return null;
 
   if (!isAuthenticated) {
     return (
@@ -85,5 +97,7 @@ export default function TeacherStats() {
     );
   }
 
-  return <TeacherStatsContent />; // Chỉ hiển thị nội dung chính khi đã nhập đúng mật khẩu
+  return (
+      <TeacherStatsContent />
+  );
 }

@@ -43,70 +43,93 @@ const HardworkingTable = () => {
   }, []);
   // console.log(students)
   return (
-    <div style={{ overflowX: "auto", padding: "20px" }}>
-      <Table
-        style={{
-          backgroundColor: "#fff",
-          borderRadius: "10px",
-          borderCollapse: "collapse",
-          boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
-        }}
-      >
-        {/* HEADER */}
-        <TableHead>
-          <TableRow style={{ backgroundColor: "#1976D2" }}>
-            <TableCell style={headerStyle}>Họ và tên</TableCell>
-            {weeks.map((week) => (
-              <TableCell key={week} align="center" style={headerStyle}>
-                {week}
-              </TableCell>
-            ))}
-            <TableCell align="center" style={headerStyle}>Tổng</TableCell>
-          </TableRow>
-        </TableHead>
+    <div className={styles.page}>
+      <main className={styles.main}>
+        <Image
+          className={styles.logo}
+          src="next.svg"
+          alt="Next.js logo"
+          width={180}
+          height={38}
+          priority
+        />
+        <ol>
+          <li>
+            Get started by editing <code>src/app/page.js</code>.
+          </li>
+          <li>Save and see your changes instantly.</li>
+        </ol>
 
-        {/* BODY */}
-        <TableBody>
-          {Object.entries(students).map(([name, scores], index) => {
-            // console.log(scores);
-            return (
-              <TableRow key={name} style={index % 2 === 0 ? rowStyle.even : rowStyle.odd}>
-                <TableCell style={cellStyle}>{name}</TableCell>
-                {weeks.map((week) => (
-                  <TableCell key={week} align="center" style={cellStyle}>
-                    {scores[week] ? (
-                      <div
-                        style={{
-                          width: 20,
-                          height: 20,
-                          borderRadius: "50%",
-                          backgroundColor: `rgba(25, 118, 210, ${scores[week] / 100})`, // Màu xanh MUI
-                          display: "inline-block",
-                          transition: "transform 0.2s ease-in-out",
-                        }}
-                        className="score-dot"
-                      />
-                    ) : (
-                      "-"
-                    )}
-                  </TableCell>
-                ))}
-                {/* Cột Tổng - Dùng màu gradient thể hiện điểm */}
-                <TableCell align="center" style={{ ...cellStyle, fontWeight: "bold", color: getColor(scores["score"]) }}>
-                  {scores["score"]}
-                </TableCell>
-              </TableRow>
-            )
-          })}
-        </TableBody>
-      </Table>
-
-      {/* CSS cho hover */}
-      <style jsx>{`
-        .score-dot:hover {
-          transform: scale(1.3);
-        }
-      `}</style>
+        <div className={styles.ctas}>
+          <a
+            className={styles.primary}
+            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Image
+              className={styles.logo}
+              src="/vercel.svg"
+              alt="Vercel logomark"
+              width={20}
+              height={20}
+            />
+            Deploy now
+          </a>
+          <a
+            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.secondary}
+          >
+            Read our docs
+          </a>
+        </div>
+      </main>
+      <footer className={styles.footer}>
+        <a
+          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Image
+            aria-hidden
+            src="/file.svg"
+            alt="File icon"
+            width={16}
+            height={16}
+          />
+          Learn
+        </a>
+        <a
+          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Image
+            aria-hidden
+            src="/window.svg"
+            alt="Window icon"
+            width={16}
+            height={16}
+          />
+          Examples
+        </a>
+        <a
+          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Image
+            aria-hidden
+            src="/globe.svg"
+            alt="Globe icon"
+            width={16}
+            height={16}
+          />
+          Go to nextjs.org →
+        </a>
+      </footer>
     </div>
   );
 };
