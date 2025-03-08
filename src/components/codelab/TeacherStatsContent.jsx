@@ -48,6 +48,7 @@ import {
 } from "react-icons/fa";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
+import CodePreviewModal from "./CodePreviewModal";
 // Đăng ký các thành phần của Chart.js
 ChartJS.register(
   CategoryScale,
@@ -411,54 +412,11 @@ export default function TeacherStatsContent() {
       )}
 
       {/* Modal xem code */}
-      <Modal isOpen={isOpen} onClose={onClose} isCentered size="xl">
-        <ModalOverlay bg="blackAlpha.600" />
-        <ModalContent
-          borderRadius="lg"
-          boxShadow="2xl"
-          border="2px solid"
-          borderColor="blue.200"
-          overflow="hidden"
-        >
-          <ModalHeader
-            bg="blue.500"
-            color="white"
-            fontSize="2xl"
-            textAlign="center"
-            py={4}
-          >
-            Code Preview
-          </ModalHeader>
-          <ModalCloseButton color="white" />
-          <ModalBody bg="gray.50" p={6}>
-            <Box
-              as="pre"
-              p={4}
-              bg="gray.100"
-              borderRadius="md"
-              overflowX="auto"
-              whiteSpace="pre-wrap"
-              wordBreak="break-word"
-              fontFamily="monospace"
-              fontSize="md"
-              color="gray.700"
-            >
-              {selectedCode}
-            </Box>
-          </ModalBody>
-          <ModalFooter bg="gray.50" justifyContent="center" py={4}>
-            <Button
-              onClick={onClose}
-              colorScheme="blue"
-              size="lg"
-              px={8}
-              py={4}
-            >
-              Close
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <CodePreviewModal
+        isOpen={isOpen}
+        onClose={onClose}
+        selectedCode={selectedCode}
+      />
     </Box>
   );
 }
