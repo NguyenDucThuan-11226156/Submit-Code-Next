@@ -1,5 +1,5 @@
 "use client";
-import dynamic from "next/dynamic"; // Import dynamic từ next/dynamic
+import dynamic from "next/dynamic";
 import React, { useState, useEffect, useRef } from "react";
 import {
   Layout,
@@ -27,7 +27,7 @@ import {
   setDoc,
   getDoc
 } from "firebase/firestore";
- import ReactQuill from "react-quill-new";
+const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
  import "react-quill-new/dist/quill.snow.css"; // Import style của Quill
 import QuestionModal from "./QuestionModal";
 import Link from "next/link";

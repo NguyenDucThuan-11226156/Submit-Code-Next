@@ -1,3 +1,4 @@
+"use client"
 import { useState, useEffect } from "react";
 import { Box, Button, Text, useToast, HStack, Spacer } from "@chakra-ui/react";
 import { executeCode } from "../../api";
