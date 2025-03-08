@@ -144,7 +144,7 @@ function SelectQuestion() {
           if (!existingDocs[q.id]) {
             await addDoc(questionsCollectionRef, {
               question: q?.question,
-              testcase: q?.testCases,
+              testCases: q?.testCases,
               title: q?.title,
               language  : q?.language || "javascript",
               teacher: q?.teacher || user.displayName,
