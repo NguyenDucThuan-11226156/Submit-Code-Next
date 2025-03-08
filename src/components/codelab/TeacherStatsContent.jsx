@@ -44,6 +44,7 @@ import {
   FaChartBar,
   FaInfoCircle,
   FaFileExcel,
+  FaExclamation,
 } from "react-icons/fa";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
@@ -118,7 +119,11 @@ export default function TeacherStatsContent() {
       "Tên User": user.displayName || "N/A",
       "Email": user.email || "N/A",
       "Số lượng testcases hoàn thành": user.passedTestCases || "N/A",
-      "Trạng thái": user.status ? "Hoàn thành" : "Chưa hoàn thành",
+      "Trạng thái": user.status === "error"
+    ? "Lỗi biên dịch"
+    : user.status
+      ? "Hoàn thành"
+      : "Chưa hoàn thành",
       "Thời gian nộp": user.timestamp
         ? dayjs(user.timestamp.toDate()).format("DD/MM/YYYY HH:mm:ss")
         : "N/A",
@@ -315,12 +320,39 @@ export default function TeacherStatsContent() {
                         <Td>{user.email || "N/A"}</Td>
                         <Td>{user.passedTestCases || "N/A"}</Td>
                         <Td>
-                          <Icon
-                            as={user.status ? FaCheckCircle : FaTimesCircle}
-                            color={user.status ? "green.400" : "red.400"}
-                            mr={2}
-                          />
-                          {user.status ? "Hoàn thành" : "Chưa hoàn thành"}
+                        <Icon
+  as={
+    user.status === "error"
+      ? FaExclamation // Icon cảnh báo lỗi biên dịch
+      : user.status
+      ? FaCheckCircle // Icon hoàn thành
+      : FaTimesCircle // Icon chưa hoàn thành
+  }
+  color={
+    user.status === "error"
+      ? "yellow.400" // Màu vàng cho lỗi biên dịch
+      : user.status
+      ? "green.400" // Màu xanh cho hoàn thành
+      : "red.400" // Màu đỏ cho chưa hoàn thành
+  }
+  mr={2}
+/>
+
+                          <span 
+  className={
+    user.status === "error"
+      ? "text-red-500"  // Màu đỏ cho lỗi biên dịch
+      : user.status
+      ? "text-green-500" // Màu xanh lá cho hoàn thành
+      : "text-yellow-500" // Màu vàng cho chưa hoàn thành
+  }
+>
+  {user.status === "error"
+    ? "Lỗi biên dịch"
+    : user.status
+      ? "Hoàn thành"
+      : "Chưa hoàn thành"}
+</span>
                         </Td>
                         <Td>
                           {user.timestamp
