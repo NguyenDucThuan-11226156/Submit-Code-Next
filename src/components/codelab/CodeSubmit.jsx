@@ -1,4 +1,3 @@
-"use client"
 import React, { useState, useEffect, useRef } from "react";
 // import "codemirror/lib/codemirror.css";
 // import "codemirror/theme/material.css";
@@ -151,7 +150,10 @@ const CodeSubmit = ({ table, user, room }) => {
             body: JSON.stringify({
               logType: "codeSubmit",
               roomID: room.roomID,
-              user: user.displayName,
+              timestamp: new Date().toISOString(), // ISO timestamp format
+
+              userID: user.uid,
+              userName: user.displayName,
               log: {
                 language: selectedLanguage,
                 code: userAnswer,
@@ -190,7 +192,10 @@ const CodeSubmit = ({ table, user, room }) => {
       },
       body: JSON.stringify({
         logType: "copyCode",
+        timestamp: new Date().toISOString(), // ISO timestamp format
+
         roomID: room.roomID,
+        userID: user.uid,
         userName: user.displayName,
         log: {
           code: userAnswer,

@@ -22,9 +22,9 @@ import {
   ModalBody,
   ModalFooter,
   HStack,
-  Center,
+  Spacer,
 } from "@chakra-ui/react";
-import { getFirestore, collection, getDocs, getDoc, doc } from "firebase/firestore";
+import { getFirestore, collection, getDocs } from "firebase/firestore";
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -43,12 +43,8 @@ import {
   FaTimesCircle,
   FaChartBar,
   FaInfoCircle,
-  FaFileExcel,
-  FaExclamation,
 } from "react-icons/fa";
-import { saveAs } from "file-saver";
-import * as XLSX from "xlsx";
-import CodePreviewModal from "./CodePreviewModal";
+
 // Đăng ký các thành phần của Chart.js
 ChartJS.register(
   CategoryScale,
@@ -65,11 +61,9 @@ export default function TeacherStatsContent() {
   // Hook cho Modal preview code
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedCode, setSelectedCode] = useState("");
-  const [isChecking, setIsChecking] = useState(false);
-  const [listStudents, setListStudents] = useState([]);
   const pathname = usePathname();
   const pathParts = pathname.split("/");
-  const roomId = pathParts[1]; // Thay đổi logic này nếu cấu trúc URL khác
+  const roomId = pathParts[2]; // Thay đổi logic này nếu cấu trúc URL khác
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -82,23 +76,14 @@ export default function TeacherStatsContent() {
         "contest",
         "questions"
       );
-      const roomDocRef = doc(db, "rooms", roomId);
       try {
-        const [questionsSnapshot, roomSnap] = await Promise.all([
-          getDocs(contestCollectionRef),
-          getDoc(roomDocRef)
-        ]);
-        const questionsList = questionsSnapshot.docs.map((doc) => ({
+        const querySnapshot = await getDocs(contestCollectionRef);
+        const questionsList = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           title: doc.data().title,
           users: doc.data().users || [],
         }));
         setQuestions(questionsList);
-        if (roomSnap.exists()) {
-          const roomData = roomSnap.data();
-          console.log("Room data:", roomData);
-          setListStudents(roomData.members || []);
-        }
       } catch (error) {
         console.error("Lỗi khi lấy dữ liệu câu hỏi:", error);
         setQuestions([]);
@@ -113,33 +98,6 @@ export default function TeacherStatsContent() {
   if (loading) {
     return <Spinner size="xl" />;
   }
-  const exportToExcel = (question) => {
-  const worksheet = XLSX.utils.json_to_sheet(
-    question.users.map((user, idx) => ({
-      "STT": idx + 1,
-      "Tên User": user.displayName || "N/A",
-      "Email": user.email || "N/A",
-      "Số lượng testcases hoàn thành": user.passedTestCases || "N/A",
-      "Trạng thái": user.status === "error"
-    ? "Lỗi biên dịch"
-    : user.status
-      ? "Hoàn thành"
-      : "Chưa hoàn thành",
-      "Thời gian nộp": user.timestamp
-        ? dayjs(user.timestamp.toDate()).format("DD/MM/YYYY HH:mm:ss")
-        : "N/A",
-      "Code": user.code || "N/A"
-    }))
-  );
-
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Thống kê");
-
-  const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-  const data = new Blob([excelBuffer], { type: "application/octet-stream" });
-
-  saveAs(data, `${question.title}_statistics.xlsx`);
-};
 
   // Dữ liệu cho biểu đồ
   const chartData = {
@@ -147,8 +105,8 @@ export default function TeacherStatsContent() {
     datasets: [
       {
         label: "Số sinh viên hoàn thành",
-        data: questions?.map(
-          (q) => q?.users?.filter((user) => user.status === true).length
+        data: questions.map(
+          (q) => q.users.filter((user) => user.status === true).length
         ),
         backgroundColor: "rgba(54, 162, 235, 0.6)",
         borderColor: "rgba(54, 162, 235, 1)",
@@ -185,34 +143,7 @@ export default function TeacherStatsContent() {
     setSelectedCode(code);
     onOpen();
   };
- 
-  const checkCode = async (question) => {
-    try {
-      setIsChecking(true);
-      const response = await fetch("https://fit.neu.edu.vn/codelab/api/save-user-codes", {
-        // const response = await fetch("http://localhost:8015/api/save-user-codes", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          classId: roomId,
-          questionId: question.id,
-        }),
-      });
-  
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      setIsChecking(false);
-      // Mở kết quả trong tab mới
-      window.open(`https://fit.neu.edu.vn/codelab/results/${roomId}/${question.id}/index.html`, "_blank");
-      // window.open(`http://localhost:8015/results/${roomId}/${question.id}/index.html`, "_blank");
-    } catch (error) {
-      console.error("Lỗi khi gửi yêu cầu kiểm tra mã:", error);
-      alert("Kiểm tra thất bại: " + error.message);
-    }
-  };
+
   return (
     <Box
       p={6}
@@ -240,171 +171,101 @@ export default function TeacherStatsContent() {
 
       {/* Bảng thống kê chi tiết */}
       {questions.length > 0 ? (
-        questions.map((question, index) => {
-          const missingStudents = listStudents.filter(
-            (student) =>
-              !question.users.some((user) => user.email === student.studentCode)
-          );
-          return (
-            <Box
-              key={question.id}
-              mt={6}
-              p={4}
-              bg="white"
-              borderRadius="md"
-              boxShadow="lg"
-              mb={6}
+        questions.map((question, index) => (
+          <Box
+            key={question.id}
+            mt={6}
+            p={4}
+            bg="white"
+            borderRadius="md"
+            boxShadow="lg"
+            mb={6}
+          >
+            <Text fontSize="xl" fontWeight="bold" mb={2} color="blue.700">
+              <Icon as={FaInfoCircle} mr={2} /> {question.title}
+            </Text>
+            <Table
+              variant="striped"
+              border="1px solid gray"
+              colorScheme="gray" // Thêm dòng này
+              borderWidth="1px"
+              size="sm"
             >
-              <Text fontSize="xl" fontWeight="bold" mb={2} color="blue.700">
-                <Icon as={FaInfoCircle} mr={2} /> {question.title}
-              </Text>
-              <HStack justify="flex-end" mb={4} spacing={1}>
-                <Button
-                  leftIcon={<Icon as={FaFileExcel} />}
-                  colorScheme="green"
-                  size="md"
-                  onClick={() => exportToExcel(question)}
-                >
-                  Xuất Excel
-                </Button>
-                <Button
-                  leftIcon={<Icon as={FaCheckCircle} />}
-                  colorScheme="blue"
-                  size="md"
-                  onClick={() => checkCode(question)}
-                >
-                  Kiểm tra
-                </Button>
-              </HStack>
-        
-              <Table
-              color={"black"}
-                colorScheme="gray"
-                size="sm"
-                borderWidth="1px"
-                borderCollapse="collapse"
-              >
-                <Thead>
-                  <Tr>
-                    {[
-                      "STT",
-                      "Tên User",
-                      "Email",
-                      "Số lượng testcases hoàn thành",
-                      "Trạng thái",
-                      "Thời gian nộp",
-                      "Preview Code",
-                    ].map((header, idx) => (
-                      <Th key={idx} border="1px solid gray" px={6} py={3} textAlign="center">
-                        {header}
-                      </Th>
-                    ))}
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {question.users.length > 0 ? (
-                    question.users.map((user, idx) => (
-                      <Tr
-                        key={user.uid}
-                        _hover={{ bg: "blue.50" }}
-                        sx={{
-                          "& td": {
-                            border: "1px solid gray",
-                            px: 6,
-                            py: 3,
-                            textAlign: "center",
-                          },
-                        }}
-                      >
-                        <Td>{idx + 1}</Td>
-                        <Td>{user.displayName || "N/A"}</Td>
-                        <Td>{user.email || "N/A"}</Td>
-                        <Td>{user.passedTestCases || "N/A"}</Td>
-                        <Td>
-                        <Icon
-  as={
-    user.status === "error"
-      ? FaExclamation // Icon cảnh báo lỗi biên dịch
-      : user.status
-      ? FaCheckCircle // Icon hoàn thành
-      : FaTimesCircle // Icon chưa hoàn thành
-  }
-  color={
-    user.status === "error"
-      ? "yellow.400" // Màu vàng cho lỗi biên dịch
-      : user.status
-      ? "green.400" // Màu xanh cho hoàn thành
-      : "red.400" // Màu đỏ cho chưa hoàn thành
-  }
-  mr={2}
-/>
+              <Thead>
+                <Tr>
+                  <Th border="1px solid gray" px={6} py={3} textAlign="center">
+                    STT
+                  </Th>
+                  <Th border="1px solid gray" px={6} py={3} textAlign="center">
+                    Tên User
+                  </Th>
+                  <Th border="1px solid gray" px={6} py={3} textAlign="center">
+                    Email
+                  </Th>
+                  <Th border="1px solid gray" px={6} py={3} textAlign="center">
+                    Số lượng testcases hoàn thành
+                  </Th>
+                  <Th border="1px solid gray" px={6} py={3} textAlign="center">
+                    Trạng thái
+                  </Th>
+                  <Th border="1px solid gray" px={6} py={3} textAlign="center">
+                    Thời gian nộp
+                  </Th>
+                  <Th border="1px solid gray" px={6} py={3} textAlign="center">
+                    Preview Code
+                  </Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+  {question.users.length > 0 ? (
+    question.users.map((user, idx) => (
+      <Tr key={user.uid} _hover={{ bg: "blue.50" }} bg={idx % 2 === 0 ? "gray.800" : "white"}>
+        <Td color={idx % 2 === 0 ? "white" : "black"} border="1px solid gray" px={6} py={3} textAlign="center">
+          {idx + 1}
+        </Td>
+        <Td color={idx % 2 === 0 ? "white" : "black"} border="1px solid gray" px={6} py={3} textAlign="center">
+          {user.displayName || "N/A"}
+        </Td>
+        <Td color={idx % 2 === 0 ? "white" : "black"} border="1px solid gray" px={6} py={3} textAlign="center">
+          {user.email || "N/A"}
+        </Td>
+        <Td color={idx % 2 === 0 ? "white" : "black"} border="1px solid gray" px={6} py={3} textAlign="center">
+          {user.passedTestCases || "N/A"}
+        </Td>
+        <Td color={idx % 2 === 0 ? "white" : "black"} border="1px solid gray" px={6} py={3} textAlign="center">
+          <Icon as={user.status ? FaCheckCircle : FaTimesCircle} color={user.status ? "green.400" : "red.400"} mr={2} />
+          {user.status ? "Hoàn thành" : "Chưa hoàn thành"}
+        </Td>
+        <Td color={idx % 2 === 0 ? "white" : "black"} border="1px solid gray" px={6} py={3} textAlign="center">
+          {user.timestamp
+            ? dayjs(user.timestamp.toDate()).format("DD/MM/YYYY HH:mm:ss")
+            : "N/A"}
+        </Td>
+        <Td color={idx % 2 === 0 ? "white" : "black"} border="1px solid gray" px={6} py={3} textAlign="center">
+          {user.code ? (
+            <Button size="sm" colorScheme="teal" onClick={() => handlePreviewCode(user.code)}>
+              Preview Code
+            </Button>
+          ) : (
+            "N/A"
+          )}
+        </Td>
+      </Tr>
+    ))
+  ) : (
+    <Tr>
+      <Td colSpan={7} textAlign="center" border="1px solid gray" px={6} py={3}>
+        Chưa có ai làm
+      </Td>
+    </Tr>
+  )}
+</Tbody>
 
-                          <span 
-  className={
-    user.status === "error"
-      ? "text-red-500"  // Màu đỏ cho lỗi biên dịch
-      : user.status
-      ? "text-green-500" // Màu xanh lá cho hoàn thành
-      : "text-yellow-500" // Màu vàng cho chưa hoàn thành
-  }
->
-  {user.status === "error"
-    ? "Lỗi biên dịch"
-    : user.status
-      ? "Hoàn thành"
-      : "Chưa hoàn thành"}
-</span>
-                        </Td>
-                        <Td>
-                          {user.timestamp
-                            ? dayjs(user.timestamp.toDate()).format("DD/MM/YYYY HH:mm:ss")
-                            : "N/A"}
-                        </Td>
-                        <Td>
-                          {user.code ? (
-                            <Button
-                              size="sm"
-                              colorScheme="teal"
-                              onClick={() => handlePreviewCode(user.code)}
-                            >
-                              Preview Code
-                            </Button>
-                          ) : (
-                            "N/A"
-                          )}
-                        </Td>
-                      </Tr>
-                    ))
-                  ) : (
-                    <Tr>
-                      <Td colSpan={7} textAlign="center" border="1px solid gray" px={6} py={3}>
-                        Chưa có ai làm
-                      </Td>
-                    </Tr>
-                  )}
-                </Tbody>
-              </Table>
-        
-              {/* Hiển thị danh sách sinh viên chưa làm bài */}
-              {missingStudents.length > 0 ? (
-                <Box mt={4} p={2} bg="red.50" borderRadius="md">
-                  <Text fontSize="md" color="red.600">
-                    Sinh viên chưa làm bài:{" "}
-                    {missingStudents.map((student) => student.fullName).join(", ")}
-                  </Text>
-                </Box>
-              ) : (
-                <Box mt={4} p={2} bg="green.50" borderRadius="md">
-                  <Text fontSize="md" color="green.600">
-                    Tất cả sinh viên đều đã làm bài!
-                  </Text>
-                </Box>
-              )}
-        
-              {index !== questions.length - 1 && <Divider my={6} />}
-            </Box>
-          );
-      })
+
+            </Table>
+            {index !== questions.length - 1 && <Divider my={6} />}
+          </Box>
+        ))
       ) : (
         <Text fontSize="lg" color="red.500" textAlign="center">
           Không có câu hỏi nào để hiển thị!
@@ -412,11 +273,54 @@ export default function TeacherStatsContent() {
       )}
 
       {/* Modal xem code */}
-      <CodePreviewModal
-        isOpen={isOpen}
-        onClose={onClose}
-        selectedCode={selectedCode}
-      />
+      <Modal isOpen={isOpen} onClose={onClose} isCentered size="xl">
+        <ModalOverlay bg="blackAlpha.600" />
+        <ModalContent
+          borderRadius="lg"
+          boxShadow="2xl"
+          border="2px solid"
+          borderColor="blue.200"
+          overflow="hidden"
+        >
+          <ModalHeader
+            bg="blue.500"
+            color="white"
+            fontSize="2xl"
+            textAlign="center"
+            py={4}
+          >
+            Code Preview
+          </ModalHeader>
+          <ModalCloseButton color="white" />
+          <ModalBody bg="gray.50" p={6}>
+            <Box
+              as="pre"
+              p={4}
+              bg="gray.100"
+              borderRadius="md"
+              overflowX="auto"
+              whiteSpace="pre-wrap"
+              wordBreak="break-word"
+              fontFamily="monospace"
+              fontSize="md"
+              color="gray.700"
+            >
+              {selectedCode}
+            </Box>
+          </ModalBody>
+          <ModalFooter bg="gray.50" justifyContent="center" py={4}>
+            <Button
+              onClick={onClose}
+              colorScheme="blue"
+              size="lg"
+              px={8}
+              py={4}
+            >
+              Close
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 }
