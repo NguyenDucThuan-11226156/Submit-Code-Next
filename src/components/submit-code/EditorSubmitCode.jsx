@@ -18,7 +18,7 @@ import {
   DrawerBody,
   DrawerCloseButton,
   useDisclosure,
-  Flex,
+  Badge
 } from "@chakra-ui/react";
 import {
   Modal,
@@ -45,9 +45,19 @@ import dayjs from "dayjs";
 import app from "../../firebase";
 import { CODE_SNIPPETS } from "../../constants";
 import Output from "./Output";
-
+const difficultyColors = {
+  Easy: "green",
+  Medium: "yellow",
+  Hard: "red",
+};
+const categoryMapping = {
+  "0": "Easy",
+  "1": "Medium",
+  "2": "Hard",
+};
 export default function CodeEditor() {
-  const editorRef = useRef();
+  const [user, setUser] = useState(null);
+  const [completedQuestions, setCompletedQuestions] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [submissions, setSubmissions] = useState([]);
@@ -60,8 +70,8 @@ export default function CodeEditor() {
   const pathname = usePathname();
   const pathParts = pathname.split("/").filter(Boolean);
   const roomId = pathParts[pathParts.length - 2];
-  const [user, setUser] = useState(null);
-  const [completedQuestions, setCompletedQuestions] = useState(0);
+  const editorRef = useRef();
+
   const totalQuestions = questions.length;
   const { colorMode } = useColorMode();
   const editorTheme = colorMode === "dark" ? "vs-dark" : "light";
@@ -176,15 +186,17 @@ export default function CodeEditor() {
         const querySnapshot = await getDocs(contestCollectionRef);
         const questionsList = querySnapshot.docs.map((doc) => ({
           id: doc.id,
-          title: doc.data().title,
-          question: doc.data().question,
-          testCases: doc.data().testCases || [],
-          users: doc.data().users || [],
-          language: doc.data().language,
+          title: doc.data()?.title,
+          question: doc.data()?.question,
+          testCases: doc.data()?.testCases || [],
+          category: doc.data()?.category,
+          users: doc.data()?.users || [],
+          language: doc.data()?.language,
         }));
         setQuestions(questionsList);
       } catch (error) {
         console.error("Error fetching questions from Firestore:", error);
+
         setQuestions([]);
       }
     };
@@ -263,34 +275,40 @@ console.log(selectedSubmission)
             Questions
           </DrawerHeader>
           <DrawerBody>
-            {questions && questions.length > 0 ? (
-              questions.map((question) => {
-                const isCompleted = question?.users?.some(
-                  (userObj) => userObj.uid === user?.uid && userObj.status === true
-                );
-                return (
-                  <Button
-                    key={question.id}
-                    variant="ghost"
-                    w="100%"
-                    onClick={() => handleQuestionClick(question)}
-                    mb={2}
-                    justifyContent="flex-start"
-                    textAlign="left"
-                    whiteSpace="normal"
-                    _hover={{ bg: hoverBg }}
-                    bg={buttonBg}
-                    color={textColor}
-                    rightIcon={isCompleted ? <CheckIcon color="green.500" /> : null}
-                  >
-                    {question.title}
-                  </Button>
-                );
-              })
-            ) : (
-              <Text color="gray.500">No questions available</Text>
-            )}
-          </DrawerBody>
+      {questions && questions.length > 0 ? (
+        questions.map((question) => {
+          const isCompleted = question?.users?.some(
+            (userObj) => userObj.uid === user?.uid && userObj.status === true
+          );
+          const categoryLabel = categoryMapping[question.category] || "Easy";
+          const categoryColor = difficultyColors[categoryLabel] || "gray";
+
+          return (
+            <Button
+              key={question.id}
+              variant="ghost"
+              w="100%"
+              onClick={() => handleQuestionClick(question)}
+              mb={2}
+              justifyContent="flex-start"
+              textAlign="left"
+              whiteSpace="normal"
+              _hover={{ bg: hoverBg }}
+              bg={buttonBg}
+              color={textColor}
+              rightIcon={isCompleted ? <CheckIcon color="green.500" /> : null}
+            >
+              <HStack justifyContent="space-between" w="100%">
+                <Text>{question.title}</Text>
+                <Badge colorScheme={categoryColor}>{categoryLabel}</Badge>
+              </HStack>
+            </Button>
+          );
+        })
+      ) : (
+        <Text color="gray.500">No questions available</Text>
+      )}
+    </DrawerBody>
         </DrawerContent>
       </Drawer>
 
@@ -314,6 +332,11 @@ console.log(selectedSubmission)
                 <Text fontSize="md" mt={2} color={accentColor}>
                   Currently coding in: {language}
                 </Text>
+              )}
+              {selectedQuestion?.category && (
+                <Badge colorScheme={difficultyColors[selectedQuestion.category]}>
+                  {categoryMapping[selectedQuestion.category]}
+                </Badge>
               )}
               <Box mt={4}>
                 <Text fontSize="lg" mb={2} color={accentColor}>
@@ -400,7 +423,7 @@ console.log(selectedSubmission)
     <ModalCloseButton />
     <ModalBody>
     <Box bg="gray.900" color="white" p={4} borderRadius="md" overflowX="auto">
-      <pre>{submissions.code}</pre>
+      {/* <pre>{submissions.code}</pre> */}
     </Box>
 
     </ModalBody>

@@ -30,14 +30,12 @@ import {
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
  import "react-quill-new/dist/quill.snow.css"; // Import style của Quill
 import QuestionModal from "./QuestionModal";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { LANGUAGE_VERSIONS } from "@/constants";
 import { Select } from "@chakra-ui/react";
 const { Title } = Typography;
 const { Sider, Content } = Layout;
-
 const CreateExamContent = () => {
   const [questions, setQuestions] = useState([
     { title: "", question: "", testCases: [] },
@@ -46,6 +44,7 @@ const CreateExamContent = () => {
   const [user, setUser] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(null);
+  const [category, setCategory] = useState("0");
   const location = usePathname();
   const pathParts = location.split("/");
   const roomId = pathParts[1]; 
@@ -77,6 +76,7 @@ const CreateExamContent = () => {
           id: doc.id,
           title: doc.data().title,
           question: doc.data().question,
+          category: doc.data().category || "0",
           testcase: doc.data().testCases || [], // Add test cases
           language: doc.data().language || "javascript",
         }));
@@ -157,6 +157,7 @@ const CreateExamContent = () => {
       await updateDoc(questionRef, {
         title: currentQuestion.title,
         question: currentQuestion.question,
+        category: currentQuestion.category || "0",
         testCases: currentQuestion.testcase || [],
       });
 
@@ -170,6 +171,7 @@ const CreateExamContent = () => {
                 ...exam,
                 title: currentQuestion.title,
                 question: currentQuestion.question,
+                category: currentQuestion?.category,
                 testCases: currentQuestion.testCases,
               }
             : exam
@@ -241,6 +243,7 @@ const CreateExamContent = () => {
             title: question.title,
             question: question.question,
             testCases: question.testCases,
+            category: question.category || "0",
             teacher: user.uid,
             language: question.language || "javascript",
             timestamp: Date.now(),
@@ -352,7 +355,15 @@ const CreateExamContent = () => {
                     width: "100%",
                   }}
                 />
-
+                {/* Category */}
+                <Title level={5} style={{color: "#333"}}>
+                  Category
+                </Title>
+                <Select placeholder="Select a category" onChange={(e) => setCategory(e)} >
+                  <option value="0">Easy</option>
+                  <option value="1">Medium</option>
+                  <option value="2">Hard</option>
+                </Select>
                 {/* Test cases */}
                 <Title level={5} style={{ color: "#333" }}>
                   Test Cases

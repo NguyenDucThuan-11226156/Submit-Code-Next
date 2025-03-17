@@ -29,6 +29,7 @@ import {
   Tooltip,
 } from "antd";
 import app from "@/firebase";
+import { Category } from "@mui/icons-material";
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
@@ -166,6 +167,7 @@ function SelectQuestion() {
               testCases: q?.testCases,
               title: q?.title,
               language: q?.language || "javascript",
+              category: q?.category || "0",
               teacher: q?.teacher || user.displayName,
               timestamp: q?.timestamp || Date.now(),
               sourceId: q.id, // lưu lại id của câu hỏi gốc
