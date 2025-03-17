@@ -34,6 +34,9 @@
   background-color: #f8f9fa;
   transform: rotateY(180deg);
   padding: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .arrow-btn {
@@ -49,4 +52,27 @@
 
 .arrow-btn:hover {
   background: rgba(255, 255, 255, 0.2); 
+}
+
+.achievement-description ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin-bottom: 0;
+}
+
+.achievement-description li {
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.achievement-description li:last-child {
+  margin-bottom: 0;
+}
+
+.achievement-description li strong {
+  font-weight: 600;
 }

@@ -1,5 +1,5 @@
 "use client";
-import dynamic from "next/dynamic";
+import dynamic from "next/dynamic"; // Import dynamic từ next/dynamic
 import React, { useState, useEffect, useRef } from "react";
 import {
   Layout,
@@ -15,7 +15,6 @@ import {
 } from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import app from "../../firebase";
-import { auth } from "../../firebase";
 import {
   getFirestore,
   collection,
@@ -24,17 +23,13 @@ import {
   doc,
   updateDoc,
   deleteDoc,
-  setDoc,
-  getDoc
 } from "firebase/firestore";
-const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
+ import ReactQuill from "react-quill-new";
  import "react-quill-new/dist/quill.snow.css"; // Import style của Quill
 import QuestionModal from "./QuestionModal";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { onAuthStateChanged } from "firebase/auth";
-import { LANGUAGE_VERSIONS } from "@/constants";
-import { Select } from "@chakra-ui/react";
+
 const { Title } = Typography;
 const { Sider, Content } = Layout;
 
@@ -43,30 +38,21 @@ const CreateExamContent = () => {
     { title: "", question: "", testCases: [] },
   ]);
   const [createdExams, setCreatedExams] = useState([]);
-  const [user, setUser] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const location = usePathname();
   const pathParts = location.split("/");
-  const roomId = pathParts[1]; 
+  const roomId = pathParts[2]; 
   const [loading, setLoading] = useState(false);
   useEffect(() => {
-    // Lắng nghe trạng thái đăng nhập của user
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-
-    // Cleanup function để tránh memory leak
-    return () => unsubscribe();
-  }, []);
-  useEffect(() => {
-    if(!user) return;
     const db = getFirestore(app);
     const contestCollectionRef = collection(
       db,
-      "users",
-      user?.uid,
-      "exams",
+      "rooms",
+      roomId,
+      "onlineJudge",
+      "contest",
+      "questions"
     );
 
     // Subscribe to real-time updates using onSnapshot
@@ -78,7 +64,6 @@ const CreateExamContent = () => {
           title: doc.data().title,
           question: doc.data().question,
           testcase: doc.data().testCases || [], // Add test cases
-          language: doc.data().language || "javascript",
         }));
         setCreatedExams(examsList); // Update state with the latest data
       },
@@ -90,17 +75,20 @@ const CreateExamContent = () => {
 
     // Cleanup function to unsubscribe from the listener when the component is unmounted or roomId changes
     return () => unsubscribe();
-  }, [roomId,user]);
+  }, [roomId]);
 
   const handleDeleteQuestion = async (questionId) => {
     const db = getFirestore(app);
     const questionRef = doc(
       db,
-      "users",
-      user?.uid,
-      "exams",
+      "rooms",
+      roomId,
+      "onlineJudge",
+      "contest",
+      "questions",
       questionId
     );
+
     try {
       await deleteDoc(questionRef); // Deletes the question from Firestore
       setCreatedExams((prevExams) =>
@@ -145,14 +133,18 @@ const CreateExamContent = () => {
       message.error("Invalid question data");
       return;
     }
+
     const db = getFirestore(app);
     const questionRef = doc(
       db,
-      "users",
-      user?.uid,
-      "exams",
+      "rooms",
+      roomId,
+      "onlineJudge",
+      "contest",
+      "questions",
       currentQuestion.id
     );
+
     try {
       await updateDoc(questionRef, {
         title: currentQuestion.title,
@@ -175,6 +167,7 @@ const CreateExamContent = () => {
             : exam
         )
       );
+
       closeModal();
     } catch (error) {
       console.error("Error updating question: ", error);
@@ -202,12 +195,7 @@ const CreateExamContent = () => {
     newQuestions[questionIndex].testCases.splice(testCaseIndex, 1);
     setQuestions(newQuestions);
   };
-  const handleLanguageChange = (index, value) => {
-    const newQuestions = [...questions];
-    newQuestions[index].language = value;
 
-    setQuestions(newQuestions);
-  };
   const handleTestCaseChange = (questionIndex, testCaseIndex, e, field) => {
     const newQuestions = [...questions];
     newQuestions[questionIndex].testCases[testCaseIndex] = {
@@ -218,47 +206,35 @@ const CreateExamContent = () => {
   };
 
   const handleSubmit = async () => {
-    if (!user?.uid) {
-      message.error("User not found!");
-      return;
-    }
     setLoading(true);
-    const db = getFirestore(app);
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
-  
-    if (!userSnap.exists()) {
-      await setDoc(userRef, { createdAt: Date.now() });
-    }
-  
     try {
-      const contestCollectionRef = collection(db, "users", user.uid, "exams");
-  
-      // Thêm tất cả câu hỏi cùng lúc bằng Promise.all
-      await Promise.all(
-        questions.map((question) =>
-          addDoc(contestCollectionRef, {
-            title: question.title,
-            question: question.question,
-            testCases: question.testCases,
-            teacher: user.uid,
-            language: question.language || "javascript",
-            timestamp: Date.now(),
-          })
-        )
+      const db = getFirestore(app);
+      const contestCollectionRef = collection(
+        db,
+        "rooms",
+        roomId,
+        "onlineJudge",
+        "contest",
+        "questions"
       );
-  
+      for (const question of questions) {
+        await addDoc(contestCollectionRef, {
+          title: question.title,
+          question: question.question,
+          testCases: question.testCases,
+          timestamp: Date.now(),
+        });
+      }
       message.success("Exam created successfully!");
     } catch (error) {
-      console.error("Error adding exams:", error);
       message.error("Failed to create exam");
     } finally {
       setLoading(false);
-      console.log("vao day");
+      console.log("vao day")
       setQuestions([{ title: "", question: "", testCases: [] }]);
     }
   };
-  
+
   return (
     <Layout
       style={{ minHeight: "100vh", backgroundColor: "#b3e0ff", color: "#333" }}
@@ -286,15 +262,14 @@ const CreateExamContent = () => {
           ]}
         />
 
-      <QuestionModal
-        visible={isModalVisible} // dùng visible thay vì open
-        question={currentQuestion}
-        handleUpdateQuestion={handleUpdateQuestion}
-        onClose={closeModal}
-        onUpdate={setCurrentQuestion}
-        handleDeleteQuestion={handleDeleteQuestion}
-      />
-
+        <QuestionModal
+          visible={isModalVisible}
+          question={currentQuestion}
+          handleUpdateQuestion={handleUpdateQuestion}
+          onClose={closeModal}
+          onUpdate={setCurrentQuestion}
+          handleDeleteQuestion={handleDeleteQuestion}
+        />
       </Sider>
       <Layout>
         <Content
@@ -309,7 +284,16 @@ const CreateExamContent = () => {
             <Title level={2} style={{ color: "#333" }}>
               Create Exam
             </Title>
-            
+            <div className="d-flex gap-2">
+              <Button>
+                <Link href={`/submit-code/${roomId}/onlineJudge/statistic`}>
+                  Statistic
+                </Link>
+              </Button>
+              <Button>
+                <Link href={`/submit-code/${roomId}/editor`}>Editor</Link>
+              </Button>
+            </div>
           </div>
           <Form onSubmitCapture={handleSubmit} layout="vertical">
             {questions.map((q, index) => (
@@ -328,18 +312,6 @@ const CreateExamContent = () => {
                     required
                   />
                 </Form.Item>
-                <Select
-                mb={4}
-                value={q.language}
-                onChange={(e) => handleLanguageChange(index, e.target.value)}
-                focusBorderColor="teal.500"
-              >
-                {Object.keys(LANGUAGE_VERSIONS).map((lang) => (
-                  <option key={lang} value={lang}>
-                    {lang.charAt(0).toUpperCase() + lang.slice(1)} (v{LANGUAGE_VERSIONS[lang]})
-                  </option>
-                ))}
-              </Select>
                 <ReactQuill
                   key={index}
                   value={q.question || ""}

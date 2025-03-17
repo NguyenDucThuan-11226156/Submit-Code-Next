@@ -1,4 +1,3 @@
-"use client"
 import { useState, useEffect } from "react";
 import { Box, Button, Text, useToast, HStack, Spacer } from "@chakra-ui/react";
 import { executeCode } from "../../api";
@@ -47,129 +46,121 @@ const Output = ({ editorRef, language, input = "", selectedQuestion,roomId }) =>
 
   // Hàm để kiểm tra test case của câu hỏi đang chọn
   // Hàm để kiểm tra test case của câu hỏi đang chọn
-  const checkTestCases = async () => {
-    const sourceCode = editorRef.current.getValue();
-    const user = auth.currentUser;
-    if (!user) {
-      toast({
-        title: "User not logged in",
-        description: "Please log in before checking test cases.",
-        status: "warning",
-        duration: 4000,
-      });
-      return;
-    }
-  
-    if (!sourceCode || !selectedQuestion || !selectedQuestion.testCases) {
-      toast({
-        title: "No question selected or no test cases available.",
-        status: "warning",
-        duration: 4000,
-      });
-      return;
-    }
-  
-    setIsChecking(true);
-    const results = [];
-    let hasCompileError = false;
-  
-    for (const testCase of selectedQuestion.testCases) {
-      try {
-        const { run: result } = await executeCode(language, sourceCode, testCase.input);
-        const programOutput = result.stdout.trim().split("\n").join("\n");
-        const expectedOutput = testCase.expectedOutput.trim();
-        const isPass = programOutput === expectedOutput;
-        results.push({ input: testCase.input, expectedOutput, programOutput, isPass });
-        console.log(result)
-        // Kiểm tra xem có lỗi biên dịch không
-        if (result.stderr) {
-          hasCompileError = true;
-        }
-      } catch (error) {
-        results.push({ input: testCase.input, expectedOutput: "N/A", programOutput: "Error", isPass: false });
-        hasCompileError = true;
-      }
-    }
-  
-    setTestResults(results);
-    setIsChecking(false);
-  
-    // Xác định `status`
-    const passedCount = results.filter((testCase) => testCase.isPass).length;
-    const status = hasCompileError
-      ? "error"
-      : passedCount === selectedQuestion.testCases.length
-      ? true
-      : false;
-  
-    // Cập nhật Firestore với `status` mới
+const checkTestCases = async () => {
+  const sourceCode = editorRef.current.getValue();
+  const user = auth.currentUser;
+  if (!user) {
+    toast({
+      title: "User not logged in",
+      description: "Please log in before checking test cases.",
+      status: "warning",
+      duration: 4000,
+    });
+    return;
+  }
+
+  if (!sourceCode || !selectedQuestion || !selectedQuestion.testCases) {
+    toast({
+      title: "No question selected or no test cases available.",
+      status: "warning",
+      duration: 4000,
+    });
+    return;
+  }
+
+  setIsChecking(true);
+  const results = [];
+
+  for (const testCase of selectedQuestion.testCases) {
     try {
-      const questionRef = doc(db, "rooms", roomId, "onlineJudge", "contest", "questions", selectedQuestion.id);
-      const questionSnap = await getDoc(questionRef);
-      if (questionSnap.exists()) {
-        const questionData = questionSnap.data();
-        const users = questionData.users || [];
-        const existingUserIndex = users.findIndex((u) => u.uid === user.uid);
-  
-        if (existingUserIndex === -1) {
-          await updateDoc(questionRef, {
-            users: arrayUnion({
+      const { run: result } = await executeCode(language, sourceCode, testCase.input);
+      const programOutput = result.output.trim();
+      const expectedOutput = testCase.expectedOutput.trim();
+      const isPass = programOutput === expectedOutput;
+      results.push({ input: testCase.input, expectedOutput, programOutput, isPass });
+    } catch (error) {
+      results.push({ input: testCase.input, expectedOutput: "N/A", programOutput: "Error", isPass: false });
+    }
+  }
+
+  setTestResults(results);
+  setIsChecking(false);
+
+  // Tính số lượng test case đúng
+  const passedCount = results.filter((testCase) => testCase.isPass).length;
+  // Nếu số test case đúng bằng tổng số test case, status sẽ là true, ngược lại false
+  const status = passedCount === selectedQuestion.testCases.length;
+
+  // Cập nhật dữ liệu lên Firestore dù có đạt đủ test case hay không
+  try {
+    const questionRef = doc(db, "rooms", roomId, "onlineJudge", "contest", "questions", selectedQuestion.id);
+    // Kiểm tra xem dữ liệu của câu hỏi đã có hay chưa
+    const questionSnap = await getDoc(questionRef);
+    if (questionSnap.exists()) {
+      const questionData = questionSnap.data();
+      const users = questionData.users || [];
+      const existingUserIndex = users.findIndex((u) => u.uid === user.uid);
+      if (existingUserIndex === -1) {
+        // Nếu chưa có, thêm mới bằng arrayUnion
+        await updateDoc(questionRef, {
+          users: arrayUnion({
+            displayName: user.displayName || "Anonymous",
+            uid: user.uid || "Unknown",
+            status, // true nếu đạt đủ, false nếu không đạt
+            email: user.email || "Anonymous",
+            timestamp: Timestamp.now(),
+            code: sourceCode,
+            passedTestCases: `${passedCount}/${selectedQuestion.testCases.length}`, // số test case đúng
+          }),
+        });
+      } else {
+        // Nếu đã có, cập nhật lại thông tin của user đó
+        users[existingUserIndex] = {
+          ...users[existingUserIndex],
+          status,
+          code: sourceCode,
+          timestamp: Timestamp.now(),
+          passedTestCases: passedCount,
+        };
+        await updateDoc(questionRef, { users });
+      }
+    } else {
+      // Nếu câu hỏi chưa tồn tại, tạo mới document với dữ liệu
+      await setDoc(
+        questionRef,
+        {
+          users: [
+            {
               displayName: user.displayName || "Anonymous",
               uid: user.uid || "Unknown",
               status,
               email: user.email || "Anonymous",
-              timestamp: Timestamp.now(),
+              timestamp: new Date(),
               code: sourceCode,
-              passedTestCases: `${passedCount}/${selectedQuestion.testCases.length}`,
-            }),
-          });
-        } else {
-          users[existingUserIndex] = {
-            ...users[existingUserIndex],
-            status,
-            code: sourceCode,
-            timestamp: Timestamp.now(),
-            passedTestCases: `${passedCount}/${selectedQuestion.testCases.length}`,
-          };
-          await updateDoc(questionRef, { users });
-        }
-      } else {
-        await setDoc(
-          questionRef,
-          {
-            users: [
-              {
-                displayName: user.displayName || "Anonymous",
-                uid: user.uid || "Unknown",
-                status,
-                email: user.email || "Anonymous",
-                timestamp: Timestamp.now(),
-                code: sourceCode,
-                passedTestCases: `${passedCount}/${selectedQuestion.testCases.length}`,
-              },
-            ],
-          },
-          { merge: true }
-        );
-      }
-  
-      toast({
-        title: "Success!",
-        description: `Your progress has been recorded. Passed ${passedCount} out of ${selectedQuestion.testCases.length} test case(s).`,
-        status: "success",
-        duration: 4000,
-      });
-    } catch (error) {
-      console.error("Failed to update Firestore:", error);
-      toast({
-        title: "Error updating progress",
-        description: error.message,
-        status: "error",
-        duration: 4000,
-      });
+              passedTestCases: passedCount,
+            },
+          ],
+        },
+        { merge: true }
+      );
     }
-  };
-  
+
+    toast({
+      title: "Success!",
+      description: `Your progress has been recorded. Passed ${passedCount} out of ${selectedQuestion.testCases.length} test case(s).`,
+      status: "success",
+      duration: 4000,
+    });
+  } catch (error) {
+    console.error("Failed to update Firestore:", error);
+    toast({
+      title: "Error updating progress",
+      description: error.message,
+      status: "error",
+      duration: 4000,
+    });
+  }
+};
 
   return (
     <Box w="100%">
@@ -200,11 +191,10 @@ const Output = ({ editorRef, language, input = "", selectedQuestion,roomId }) =>
           borderRadius={4}
           borderColor={isError ? "red.500" : "#333"}
           mb={4}
-          style={{ whiteSpace: "pre-wrap" }} // Thêm dòng này
         >
-          <Text style={{ whiteSpace: "pre-wrap" }}>
-  {output ? output.join("\n") : 'Click "Run Code" to see the output here'}
-</Text>
+          {output
+            ? output.map((line, i) => <Text key={i}>{line}</Text>)
+            : 'Click "Run Code" to see the output here'}
         </Box>
 
         {/* Kết quả kiểm tra test case */}
@@ -224,14 +214,7 @@ const Output = ({ editorRef, language, input = "", selectedQuestion,roomId }) =>
           </Text>
           {/* <Text fontSize="sm">🔹 Input: {testCaseResult.input}</Text>
           <Text fontSize="sm">✅ Expected: {testCaseResult.expectedOutput}</Text> */}
-          {/* <Box>
-            <Text fontSize="sm" color={testCaseResult.isPass ? "green.500" : "red.500"}>📌 Output:</Text>
-            {testCaseResult.programOutput.split("\n").map((line, index) => (
-              <Text key={index} fontSize="sm" color={"black"}>
-                {line}
-              </Text>
-            ))}
-          </Box> */}
+          {/* <Text fontSize="sm">📌 Output: {testCaseResult.programOutput}</Text> */}
         </Box>
       ))}
     </Box>
