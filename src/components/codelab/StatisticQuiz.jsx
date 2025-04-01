@@ -25,13 +25,13 @@ const StatisticQuiz = ({ quizzes }) => {
           {
             scaleType: "band",
             data: names,
-            tickLabelStyle: { fontSize: 10, angle: -45, textAnchor: "end" }, // Xoay chữ, giảm font
+            tickLabelStyle: { fontSize: 10, angle: -45, textAnchor: "end" }, 
           },
         ]}
         series={[{ data: quizCounts, label: "Số Quiz" }]}
-        width={Math.max(1000, names.length * 30)} // Tăng chiều rộng khi số lượng sinh viên nhiều
+        width={Math.max(1000, names.length * 30)} 
         height={400}
-        margin={{ top: 20, right: 30, bottom: 80, left: 40 }} // Tăng khoảng trống để chữ không bị cắt
+        margin={{ top: 20, right: 30, bottom: 80, left: 40 }} 
       />
     </div>
   );

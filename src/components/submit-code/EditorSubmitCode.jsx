@@ -129,20 +129,16 @@ export default function CodeEditor() {
         const questionSnap = await getDoc(questionRef);
         if (questionSnap.exists()) {
           const questionData = questionSnap.data();
-          console.log("Question Data:", questionData);
           // Lọc danh sách users để tìm user hiện tại
           const userSubmission = questionData.users?.find(
             (u) => u.uid === user.uid
           );
           if (userSubmission) {
-            console.log("User Submission:", userSubmission);
             setSubmissions(userSubmission);
           } else {
-            console.log("User chưa có bài nộp");
             setSubmissions(null);
           }
         } else {
-          console.log("Câu hỏi không tồn tại");
           setSubmissions(null);
         }
       } catch (error) {
@@ -204,7 +200,6 @@ export default function CodeEditor() {
       fetchQuestions();
     }
   }, [roomId]);
-console.log(selectedSubmission)
   // Lưu code vào localStorage theo câu hỏi
   useEffect(() => {
     if (selectedQuestion) {
@@ -423,9 +418,8 @@ console.log(selectedSubmission)
     <ModalCloseButton />
     <ModalBody>
     <Box bg="gray.900" color="white" p={4} borderRadius="md" overflowX="auto">
-      {/* <pre>{submissions.code}</pre> */}
+      <pre>{submissions.code}</pre>
     </Box>
-
     </ModalBody>
     <ModalFooter>
       <Button colorScheme="blue" mr={3} onClick={() => setIsModalOpen(false)}>

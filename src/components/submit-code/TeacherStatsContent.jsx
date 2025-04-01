@@ -205,7 +205,6 @@ export default function TeacherStatsContent() {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       setIsChecking(false);
-      // Mở kết quả trong tab mới
       window.open(`https://fit.neu.edu.vn/codelab/results/${roomId}/${question.id}/index.html`, "_blank");
       // window.open(`http://localhost:8015/results/${roomId}/${question.id}/index.html`, "_blank");
     } catch (error) {
