@@ -21,7 +21,6 @@ import { CODE_SNIPPETS } from "../../constants";
 import Output from "./Output";
 import app from "../../firebase"; // Import Firebase app configuration
 import { getFirestore, collection, getDocs, onSnapshot, doc,getDoc } from "firebase/firestore";
-import { query, where } from "firebase/firestore";
 import { usePathname } from "next/navigation";
 
 import { Progress, Avatar } from "@chakra-ui/react";
@@ -33,8 +32,7 @@ import dayjs from "dayjs";
 export default function CodeEditor() {
   const editorRef = useRef();
   const [isModalOpen, setIsModalOpen] = useState(false);
-const [selectedSubmission, setSelectedSubmission] = useState(null);
-
+  const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [value, setValue] = useState("");
   const [language, setLanguage] = useState("javascript");
@@ -42,26 +40,12 @@ const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [selectedQuestion, setSelectedQuestion] = useState(null); // Câu hỏi đang được chọn
   const [input, setInput] = useState(""); // Input field state
   const pathname = usePathname();
-const pathParts = pathname.split("/");
-const roomId = pathParts[2]; // Thay đổi logic này nếu cấu trúc URL khác
+  const pathParts = pathname.split("/");
+  const roomId = pathParts[2]; // Thay đổi logic này nếu cấu trúc URL khác
   const [user, setUser] = useState(null);
   const [completedQuestions, setCompletedQuestions] = useState(0);
   const totalQuestions = questions.length;
-  const { colorMode } = useColorMode();
-  const editorTheme = colorMode === 'dark' ? 'vs-dark' : 'light';
-  const bgColor = useColorModeValue('gray.50', 'gray.900');
-  const headerBg = useColorModeValue('white', 'gray.800');
-  const textColor = useColorModeValue('gray.800', 'white');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const accentColor = useColorModeValue('blue.600', 'blue.200');
-  const hoverBg = useColorModeValue('gray.100', 'gray.700');
-  const buttonBg = useColorModeValue('white', 'gray.800');
-  const placeholderColor = useColorModeValue('gray.500', 'gray.400');
-  const openCodePreview = (submission) => {
-    setSelectedSubmission(submission);
-    setIsModalOpen(true);
-  };
-  
+
   useEffect(() => {
     const fetchUserSubmission = async () => {
       if (user && selectedQuestion) {
@@ -100,9 +84,6 @@ const roomId = pathParts[2]; // Thay đổi logic này nếu cấu trúc URL kh�
   
     fetchUserSubmission();
   }, [user, selectedQuestion]);
-  
-  
-  
 
   useEffect(() => {
     const auth = getAuth(app);
@@ -135,15 +116,7 @@ const roomId = pathParts[2]; // Thay đổi logic này nếu cấu trúc URL kh�
     return () => unsubscribeAuth(); // Cleanup auth listener
   }, [roomId]); // Chỉ chạy lại khi `roomId` thay đổi
   
-  const onMount = (editor) => {
-    editorRef.current = editor;
-    editor.focus();
-  };
-
-  const onSelect = (language) => {
-    setLanguage(language);
-    setValue(CODE_SNIPPETS[language]);
-  };
+ 
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -195,6 +168,33 @@ const roomId = pathParts[2]; // Thay đổi logic này nếu cấu trúc URL kh�
     }
   }, [value, selectedQuestion, language]);
 
+  const { colorMode } = useColorMode();
+  const editorTheme = colorMode === 'dark' ? 'vs-dark' : 'light';
+  const bgColor = useColorModeValue('gray.50', 'gray.900');
+  const headerBg = useColorModeValue('white', 'gray.800');
+  const textColor = useColorModeValue('gray.800', 'white');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const accentColor = useColorModeValue('blue.600', 'blue.200');
+  const hoverBg = useColorModeValue('gray.100', 'gray.700');
+  const buttonBg = useColorModeValue('white', 'gray.800');
+  const placeholderColor = useColorModeValue('gray.500', 'gray.400');
+  // Khai báo biến cho Textarea background
+  const textareaBg = useColorModeValue('gray.100', 'gray.700');
+  const openCodePreview = (submission) => {
+    console.log(submission)
+    setSelectedSubmission(submission);
+    setIsModalOpen(true);
+  };
+  
+  const onMount = (editor) => {
+    editorRef.current = editor;
+    editor.focus();
+  };
+
+  const onSelect = (language) => {
+    setLanguage(language);
+    setValue(CODE_SNIPPETS[language]);
+  };
   
   return (
     <>
@@ -342,12 +342,11 @@ const roomId = pathParts[2]; // Thay đổi logic này nếu cấu trúc URL kh�
             value={input} 
             onChange={(e) => setInput(e.target.value)} 
             size="sm" 
-            bg={useColorModeValue('gray.100', 'gray.700')}
+            bg={textareaBg}   
             color={textColor}
             _placeholder={{ color: placeholderColor }}
           />
           </Box>
-
           <Output 
             roomId={roomId} 
             editorRef={editorRef} 
@@ -357,56 +356,29 @@ const roomId = pathParts[2]; // Thay đổi logic này nếu cấu trúc URL kh�
           />
         </Box>
       </Box>
-      <Box mt={8}>
-  <Text fontSize="xl" fontWeight="bold" mb={4}>
-    Lịch sử nộp bài
-  </Text>
-  {submissions && Object.keys(submissions).length > 0 ? (
-  <Tabs variant="enclosed">
-    <TabList>
-      {[submissions].map((submission) => (
-        submission?.timestamp ? (
-          <Tab key={submission.timestamp.seconds}>
-            {dayjs(submission.timestamp.toDate()).format("DD/MM/YYYY HH:mm:ss")}
-          </Tab>
-        ) : null
-      ))}
-    </TabList>
-    <TabPanels>
-      {[submissions].map((submission) => (
-        submission?.timestamp ? (
-          <TabPanel key={submission.timestamp.seconds}>
-            <Button colorScheme="blue" onClick={() => openCodePreview(submission)}>
-              Xem trước
-            </Button>
-          </TabPanel>
-        ) : null
-      ))}
-    </TabPanels>
-  </Tabs>
-) : (
-  <Text>Không tìm thấy lịch sử nộp bài.</Text>
-)}
-
-
-</Box>
-<Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} size="6xl">
-  <ModalOverlay />
-  <ModalContent>
-    <ModalHeader>Mã nguồn đã nộp</ModalHeader>
-    <ModalCloseButton />
-    <ModalBody>
-    <Box bg="gray.900" color="white" p={4} borderRadius="md">
-  <pre>{submissions.code}</pre>
-</Box>
-    </ModalBody>
-    <ModalFooter>
-      <Button colorScheme="blue" mr={3} onClick={() => setIsModalOpen(false)}>
-        Đóng
-      </Button>
-    </ModalFooter>
-  </ModalContent>
-</Modal>
+      <Box mt={8} p={4}>
+         <Text fontSize="xl" fontWeight="bold" mb={4}>
+           Lịch sử nộp bài 12345678asdasd
+         </Text>
+         <Text>Submission history here</Text>
+       </Box>
+       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} size="6xl">
+         <ModalOverlay />
+         <ModalContent>
+           <ModalHeader>Mã nguồn đã nộp</ModalHeader>
+           <ModalCloseButton />
+           <ModalBody>
+             <Box bg="gray.900" color="white" p={4} borderRadius="md" overflowX="auto">
+               <pre>{selectedSubmission?.code}</pre>
+             </Box>
+           </ModalBody>
+           <ModalFooter>
+             <Button colorScheme="blue" mr={3} onClick={() => setIsModalOpen(false)}>
+               Đóng
+               </Button>
+               </ModalFooter>
+         </ModalContent>
+       </Modal>
     </>
   );
 }
