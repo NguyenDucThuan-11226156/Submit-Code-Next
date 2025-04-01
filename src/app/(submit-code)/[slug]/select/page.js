@@ -43,8 +43,7 @@ function SelectQuestion() {
   const [user, setUser] = useState(null);
   const pathname = usePathname();
   const pathParts = pathname.split("/").filter(Boolean);
-  const roomId = pathParts[1]; // Thay đổi logic này nếu cấu trúc URL khác
-
+  const roomId = pathParts[0]; // Thay đổi logic này nếu cấu trúc URL khác
   // Lắng nghe trạng thái đăng nhập
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {

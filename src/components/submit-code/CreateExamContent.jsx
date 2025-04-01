@@ -7,11 +7,9 @@ import {
   Button,
   Input,
   Form,
-  Space,
   Typography,
   Divider,
   message,
-  Modal,
 } from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import app from "../../firebase";
@@ -359,7 +357,7 @@ const CreateExamContent = () => {
                 <Title level={5} style={{color: "#333"}}>
                   Category
                 </Title>
-                <Select placeholder="Select a category" onChange={(e) => setCategory(e)} >
+                <Select placeholder="Select a category" onChange={(e) => setCategory(e)} border={"1px solid #ccc"} mb={4} padding={4} >
                   <option value="0">Easy</option>
                   <option value="1">Medium</option>
                   <option value="2">Hard</option>
