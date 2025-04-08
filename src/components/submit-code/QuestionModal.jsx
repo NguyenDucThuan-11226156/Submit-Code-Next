@@ -1,5 +1,5 @@
 "use client"
-import React from 'react';
+import React, { useState } from 'react';
 import { Modal, Input, Button, Form, Typography, message } from 'antd';
 import dynamic from "next/dynamic";
 
@@ -9,16 +9,20 @@ import { debounce } from 'lodash';
 import { useEffect } from 'react';
 const { Title } = Typography;
 import { useRef } from 'react';
+import { Select } from '@chakra-ui/react';
+import { LANGUAGE_VERSIONS } from '@/constants';
 const QuestionModal = ({ visible, question, onClose, onUpdate, handleUpdateQuestion, handleDeleteQuestion }) => {
   if (!question) return null;
+  const [category, setCategory] = useState("0");
+
   const handleTitleChange = (e) => {
     onUpdate({ ...question, title: e.target.value });
   };
   const isMounted = useRef(false);
-
+  console.log(question?.category)
   useEffect(() => {
-    isMounted.current = false; // Reset khi câu hỏi thay đổi
-  }, [question]); // Chạy lại khi question thay đổi
+    isMounted.current = false; 
+  }, [question]); 
   
   const handleQuestionChange = debounce((value) => {
     if (!isMounted.current) {
@@ -54,7 +58,15 @@ const QuestionModal = ({ visible, question, onClose, onUpdate, handleUpdateQuest
     message.success("Question deleted successfully!");
     onClose();
   };
-
+  const handleLanguageChange = ( value) => {
+    console.log(value)
+    const updatedQuestion = { ...question, language: value };
+    onUpdate(updatedQuestion);
+  }
+  const handleCategoryChange = (value) => {
+    setCategory(value);
+    onUpdate({ ...question, category: value });
+  }
   return (
     <Modal
       title="Edit Question"
@@ -66,6 +78,18 @@ const QuestionModal = ({ visible, question, onClose, onUpdate, handleUpdateQuest
         <Form.Item label="Title">
           <Input value={question.title} onChange={handleTitleChange} />
         </Form.Item>
+         <Select
+            mb={4}
+            value={question.language}
+            onChange={(e) => handleLanguageChange( e.target.value)}
+            focusBorderColor="teal.500"
+          >
+            {Object.keys(LANGUAGE_VERSIONS).map((lang) => (
+              <option key={lang} value={lang}>
+                {lang.charAt(0).toUpperCase() + lang.slice(1)} (v{LANGUAGE_VERSIONS[lang]})
+              </option>
+            ))}
+          </Select>
         <Form.Item label="Question">
           <ReactQuill
             value={question?.question || ""}
@@ -76,7 +100,21 @@ const QuestionModal = ({ visible, question, onClose, onUpdate, handleUpdateQuest
             }}
           />
         </Form.Item>
-
+          <Title level={5} style={{color: "#333"}}>
+            Category
+          </Title>
+          <Select 
+            placeholder="Select a category"
+            value={question?.category}
+            onChange={(e) => handleCategoryChange(e.target.value)}
+            border="1px solid #ccc" 
+            mb={4} 
+            padding={4}
+          >
+            <option value="0">Easy</option>
+            <option value="1">Medium</option>
+            <option value="2">Hard</option>
+          </Select>
         <Title level={5}>Test Cases</Title>
         {question?.testcase?.map((testCase, index) => (
           <div key={index}>
