@@ -418,7 +418,7 @@ export default function CodeEditor() {
     <ModalCloseButton />
     <ModalBody>
     <Box bg="gray.900" color="white" p={4} borderRadius="md" overflowX="auto">
-      <pre>{submissions.code}</pre>
+      <pre>{submissions?.code}</pre>
     </Box>
     </ModalBody>
     <ModalFooter>
