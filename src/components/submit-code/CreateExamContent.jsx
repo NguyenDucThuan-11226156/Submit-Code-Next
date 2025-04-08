@@ -32,6 +32,7 @@ import { usePathname } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { LANGUAGE_VERSIONS } from "@/constants";
 import { Select } from "@chakra-ui/react";
+import language from "react-syntax-highlighter/dist/esm/languages/hljs/1c";
 const { Title } = Typography;
 const { Sider, Content } = Layout;
 const CreateExamContent = () => {
@@ -155,6 +156,7 @@ const CreateExamContent = () => {
       await updateDoc(questionRef, {
         title: currentQuestion.title,
         question: currentQuestion.question,
+        language: currentQuestion.language || "javascript",
         category: currentQuestion.category || "0",
         testCases: currentQuestion.testcase || [],
       });
@@ -310,7 +312,6 @@ const CreateExamContent = () => {
             <Title level={2} style={{ color: "#333" }}>
               Create Exam
             </Title>
-            
           </div>
           <Form onSubmitCapture={handleSubmit} layout="vertical">
             {questions.map((q, index) => (
