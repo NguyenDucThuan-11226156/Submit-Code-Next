@@ -29,7 +29,6 @@ import {
   Tooltip,
 } from "antd";
 import app from "@/firebase";
-import { Category } from "@mui/icons-material";
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
