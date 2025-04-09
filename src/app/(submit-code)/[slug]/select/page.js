@@ -159,6 +159,7 @@ function SelectQuestion() {
       // Thêm mới các câu hỏi được chọn mà chưa tồn tại trong Firebase
       await Promise.all(
         selectedQuestionsData.map(async (q) => {
+          console.log(q)
           if (!existingDocs[q.id]) {
             await addDoc(questionsCollectionRef, {
               question: q?.question,

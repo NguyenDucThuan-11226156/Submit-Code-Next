@@ -275,9 +275,9 @@ export default function CodeEditor() {
           const isCompleted = question?.users?.some(
             (userObj) => userObj.uid === user?.uid && userObj.status === true
           );
+          console.log(question)
           const categoryLabel = categoryMapping[question.category] || "Easy";
           const categoryColor = difficultyColors[categoryLabel] || "gray";
-
           return (
             <Button
               key={question.id}
