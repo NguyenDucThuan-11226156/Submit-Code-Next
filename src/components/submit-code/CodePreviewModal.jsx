@@ -1,4 +1,3 @@
-// CodePreviewModal.jsx
 import React, { useState, useEffect } from "react";
 import {
   Modal,
@@ -24,7 +23,7 @@ const CodePreviewModal = ({
   onClose,
   selectedCode,
   language = "java",
-  initialInput = "", // đặt tên là initialInput để khởi tạo trạng thái input
+  initialInput = "",
 }) => {
   const [isRunning, setIsRunning] = useState(false);
   const [runOutput, setRunOutput] = useState([]);
@@ -32,19 +31,18 @@ const CodePreviewModal = ({
   const [customInput, setCustomInput] = useState(initialInput);
   const toast = useToast();
 
-  // Nếu initialInput thay đổi, cập nhật customInput
   useEffect(() => {
-    setCustomInput(initialInput);
-  }, [initialInput]);
+    setRunOutput([]); // Reset output về mảng rỗng
+    setIsError(false); // Reset trạng thái lỗi
+    setCustomInput(initialInput); // Reset input về giá trị ban đầu
+  }, [selectedCode, initialInput]); // Theo dõi selectedCode và initialInput
 
   const handleRunCode = async () => {
     const sourceCode = selectedCode;
     if (!sourceCode) return;
     try {
       setIsRunning(true);
-      // Gọi API executeCode sử dụng customInput từ ô nhập liệu
       const { run: result } = await executeCode(language, sourceCode, customInput);
-      // Tách kết quả output thành các dòng
       setRunOutput(result.output.split("\n"));
       result.stderr ? setIsError(true) : setIsError(false);
       toast({
@@ -111,11 +109,10 @@ const CodePreviewModal = ({
         </ModalHeader>
         <ModalCloseButton color="white" />
         <ModalBody bg="gray.50" p={6}>
-          {/* Hiển thị code */}
           <Box
             as="pre"
             p={4}
-            bg="gray.200"  // Màu nền sáng hơn cho code
+            bg="gray.200"
             borderRadius="md"
             border="1px solid"
             borderColor="gray.400"
@@ -124,18 +121,16 @@ const CodePreviewModal = ({
             wordBreak="break-word"
             fontFamily="monospace"
             fontSize="md"
-            color="black"   // Đặt màu chữ đậm
+            color="black"
           >
             {selectedCode}
           </Box>
 
-          {/* Ô nhập input cho code */}
           <FormControl mt={4}>
             <FormLabel fontWeight="bold" color="gray.700">
               Input cho code
             </FormLabel>
             <Textarea
-              placeholder="Nhập input cho code..."
               value={customInput}
               onChange={(e) => setCustomInput(e.target.value)}
               resize="vertical"
@@ -151,7 +146,6 @@ const CodePreviewModal = ({
               <Text>Running code...</Text>
             </Box>
           )}
-          {/* Hiển thị output */}
           {runOutput.length > 0 && (
             <Box
               mt={4}

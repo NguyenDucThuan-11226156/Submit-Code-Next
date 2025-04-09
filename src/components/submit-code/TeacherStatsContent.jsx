@@ -67,6 +67,7 @@ export default function TeacherStatsContent() {
   const [selectedCode, setSelectedCode] = useState("");
   const [isChecking, setIsChecking] = useState(false);
   const [listStudents, setListStudents] = useState([]);
+  const [language, setLanguage] = useState("java"); // Ngôn ngữ mặc định là Java
   const pathname = usePathname();
   const pathParts = pathname.split("/");
   const roomId = pathParts[1]; // Thay đổi logic này nếu cấu trúc URL khác
@@ -91,6 +92,7 @@ export default function TeacherStatsContent() {
         const questionsList = questionsSnapshot.docs.map((doc) => ({
           id: doc.id,
           title: doc.data().title,
+          language: doc.data().language,
           users: doc.data().users || [],
         }));
         setQuestions(questionsList);
@@ -140,7 +142,7 @@ export default function TeacherStatsContent() {
 
   saveAs(data, `${question.title}_statistics.xlsx`);
 };
-
+  console.log(language)
   // Dữ liệu cho biểu đồ
   const chartData = {
     labels: questions.map((q) => q.title),
@@ -181,7 +183,8 @@ export default function TeacherStatsContent() {
   };
 
   // Hàm mở Modal xem code của sinh viên
-  const handlePreviewCode = (code) => {
+  const handlePreviewCode = (code, language) => {
+    setLanguage(language);
     setSelectedCode(code);
     onOpen();
   };
@@ -321,38 +324,38 @@ export default function TeacherStatsContent() {
                         <Td>{user.passedTestCases || "N/A"}</Td>
                         <Td>
                         <Icon
-  as={
-    user.status === "error"
-      ? FaExclamation // Icon cảnh báo lỗi biên dịch
-      : user.status
-      ? FaCheckCircle // Icon hoàn thành
-      : FaTimesCircle // Icon chưa hoàn thành
-  }
-  color={
-    user.status === "error"
-      ? "yellow.400" // Màu vàng cho lỗi biên dịch
-      : user.status
-      ? "green.400" // Màu xanh cho hoàn thành
-      : "red.400" // Màu đỏ cho chưa hoàn thành
-  }
-  mr={2}
-/>
+                          as={
+                            user.status === "error"
+                              ? FaExclamation // Icon cảnh báo lỗi biên dịch
+                              : user.status
+                              ? FaCheckCircle // Icon hoàn thành
+                              : FaTimesCircle // Icon chưa hoàn thành
+                          }
+                          color={
+                            user.status === "error"
+                              ? "yellow.400" // Màu vàng cho lỗi biên dịch
+                              : user.status
+                              ? "green.400" // Màu xanh cho hoàn thành
+                              : "red.400" // Màu đỏ cho chưa hoàn thành
+                          }
+                          mr={2}
+                        />
 
-                          <span 
-  className={
-    user.status === "error"
-      ? "text-red-500"  // Màu đỏ cho lỗi biên dịch
-      : user.status
-      ? "text-green-500" // Màu xanh lá cho hoàn thành
-      : "text-yellow-500" // Màu vàng cho chưa hoàn thành
-  }
->
-  {user.status === "error"
-    ? "Lỗi biên dịch"
-    : user.status
-      ? "Hoàn thành"
-      : "Chưa hoàn thành"}
-</span>
+                                                  <span 
+                          className={
+                            user.status === "error"
+                              ? "text-red-500"  // Màu đỏ cho lỗi biên dịch
+                              : user.status
+                              ? "text-green-500" // Màu xanh lá cho hoàn thành
+                              : "text-yellow-500" // Màu vàng cho chưa hoàn thành
+                          }
+                        >
+                          {user.status === "error"
+                            ? "Lỗi biên dịch"
+                            : user.status
+                              ? "Hoàn thành"
+                              : "Chưa hoàn thành"}
+                        </span>
                         </Td>
                         <Td>
                           {user.timestamp
@@ -364,7 +367,7 @@ export default function TeacherStatsContent() {
                             <Button
                               size="sm"
                               colorScheme="teal"
-                              onClick={() => handlePreviewCode(user.code)}
+                              onClick={() => handlePreviewCode(user.code, question.language)}
                             >
                               Preview Code
                             </Button>
@@ -412,6 +415,7 @@ export default function TeacherStatsContent() {
 
       {/* Modal xem code */}
       <CodePreviewModal
+      language={language || "java"} // Ngôn ngữ mặc định là Java
         isOpen={isOpen}
         onClose={onClose}
         selectedCode={selectedCode}

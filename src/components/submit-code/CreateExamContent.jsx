@@ -249,7 +249,6 @@ const CreateExamContent = () => {
           })
         )
       );
-  
       message.success("Exam created successfully!");
     } catch (error) {
       console.error("Error adding exams:", error);
