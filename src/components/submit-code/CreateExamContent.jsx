@@ -32,7 +32,6 @@ import { usePathname } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { LANGUAGE_VERSIONS } from "@/constants";
 import { Select } from "@chakra-ui/react";
-import language from "react-syntax-highlighter/dist/esm/languages/hljs/1c";
 const { Title } = Typography;
 const { Sider, Content } = Layout;
 const CreateExamContent = () => {
@@ -324,15 +323,19 @@ const CreateExamContent = () => {
                     style={{
                       backgroundColor: "#f5f5f5",
                       borderColor: "#ccc",
-                      color: "#333",
+                      color: "#000000",
                       padding: "10px",
                     }}
                     required
+                    
                   />
                 </Form.Item>
                 <Select
                 mb={4}
                 value={q.language}
+                backgroundColor={"#f5f5f5"}
+                color={"#333"}
+                border={"1px solid #ccc"}
                 onChange={(e) => handleLanguageChange(index, e.target.value)}
                 focusBorderColor="teal.500"
               >

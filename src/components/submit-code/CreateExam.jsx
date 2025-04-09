@@ -43,7 +43,7 @@ export default function TeacherStats() {
 
   if (!isAuthenticated) {
     return (
-      <ChakraProvider>
+      // <ChakraProvider>
         <Box
           minH="100vh"
           display="flex"
@@ -87,7 +87,7 @@ export default function TeacherStats() {
             </Button>
           </VStack>
         </Box>
-      </ChakraProvider>
+      // </ChakraProvider>
     );
   }
 
