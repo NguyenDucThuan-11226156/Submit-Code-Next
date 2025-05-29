@@ -161,7 +161,7 @@ export default function CodeEditor() {
             id: doc.id,
             ...doc.data(),
           }));
-          setQuestions(updatedQuestions);
+          // setQuestions(updatedQuestions);
           const completedCount = updatedQuestions.filter((q) =>
             q?.users?.some((userObj) => userObj.uid === currentUser.uid && userObj.status === true)
           ).length;
@@ -180,16 +180,26 @@ export default function CodeEditor() {
       const contestCollectionRef = collection(db, "rooms", roomId, "onlineJudge", "contest", "questions");
       try {
         const querySnapshot = await getDocs(contestCollectionRef);
-        const questionsList = querySnapshot.docs.map((doc) => ({
+        const examsList = querySnapshot.docs.map((doc) => ({
           id: doc.id,
-          title: doc.data()?.title,
-          question: doc.data()?.question,
-          testCases: doc.data()?.testCases || [],
-          category: doc.data()?.category,
-          users: doc.data()?.users || [],
-          language: doc.data()?.language,
+          title: doc.data().title,
+          question: doc.data().question,
+          category: doc.data().category || "0",
+          testcase: doc.data().testCases || [],
+          language: doc.data().language || "javascript",
         }));
-        setQuestions(questionsList);
+
+        // Sắp xếp theo số thứ tự trong title (giả sử title là "Bài X")
+        const getNumber = (title) => {
+          if (!title) return 0;
+          // Loại bỏ khoảng trắng, lấy số đầu tiên
+          const match = title.replace(/\s+/g, '').match(/\d+/);
+          return match ? parseInt(match[0], 10) : 0;
+        };
+
+        const sortedList = examsList.sort((a, b) => getNumber(a.title) - getNumber(b.title));
+        console.log("sortedList",sortedList)
+        setQuestions(sortedList);
       } catch (error) {
         console.error("Error fetching questions from Firestore:", error);
 
@@ -275,7 +285,6 @@ export default function CodeEditor() {
           const isCompleted = question?.users?.some(
             (userObj) => userObj.uid === user?.uid && userObj.status === true
           );
-          console.log(question)
           const categoryLabel = categoryMapping[question.category] || "Easy";
           const categoryColor = difficultyColors[categoryLabel] || "gray";
           return (

@@ -65,6 +65,7 @@ function SelectQuestion() {
           id: doc.id,
           ...doc.data(),
         }));
+        console.log(fetchedQuestions)
         setQuestions(fetchedQuestions);
       } catch (error) {
         console.error("Lỗi lấy câu hỏi:", error);
@@ -94,6 +95,7 @@ function SelectQuestion() {
         const selected = querySnapshot.docs.map(
           (docSnap) => docSnap.data().sourceId
         );
+
         setSelectedQuestions(selected);
       } catch (error) {
         console.error("Lỗi lấy các câu hỏi đã tick:", error);
@@ -159,14 +161,14 @@ function SelectQuestion() {
       // Thêm mới các câu hỏi được chọn mà chưa tồn tại trong Firebase
       await Promise.all(
         selectedQuestionsData.map(async (q) => {
-          console.log(q)
+          // console.log(q)
           if (!existingDocs[q.id]) {
             await addDoc(questionsCollectionRef, {
               question: q?.question,
               testCases: q?.testCases,
               title: q?.title,
               language: q?.language || "javascript",
-              category: q?.category || "0",
+              category: q?.category || "1",
               teacher: q?.teacher || user.displayName,
               timestamp: q?.timestamp || Date.now(),
               sourceId: q.id, // lưu lại id của câu hỏi gốc

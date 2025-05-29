@@ -36,13 +36,12 @@ const { Title } = Typography;
 const { Sider, Content } = Layout;
 const CreateExamContent = () => {
   const [questions, setQuestions] = useState([
-    { title: "", question: "", testCases: [] },
+    { title: "", question: "", testCases: [], category:"" },
   ]);
   const [createdExams, setCreatedExams] = useState([]);
   const [user, setUser] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(null);
-  const [category, setCategory] = useState("0");
   const location = usePathname();
   const pathParts = location.split("/");
   const roomId = pathParts[1]; 
@@ -256,8 +255,14 @@ const CreateExamContent = () => {
     } finally {
       setLoading(false);
       console.log("vao day");
-      setQuestions([{ title: "", question: "", testCases: [] }]);
+      setQuestions([{ title: "", question: "", testCases: [], category:"" }]);
     }
+  };
+  
+  const handleCategoryChange = (index, value) => {
+    const newQuestions = [...questions];
+    newQuestions[index].category = value;
+    setQuestions(newQuestions);
   };
   
   return (
@@ -360,7 +365,14 @@ const CreateExamContent = () => {
                 <Title level={5} style={{color: "#333"}}>
                   Category
                 </Title>
-                <Select placeholder="Select a category" onChange={(e) => setCategory(e)} border={"1px solid #ccc"} mb={4} padding={4} >
+                <Select
+                  placeholder="Select a category"
+                  value={q.category}
+                  onChange={(e) => handleCategoryChange(index, e.target.value)}
+                  border={"1px solid #ccc"}
+                  mb={4}
+                  padding={4}
+                >
                   <option value="0">Easy</option>
                   <option value="1">Medium</option>
                   <option value="2">Hard</option>
