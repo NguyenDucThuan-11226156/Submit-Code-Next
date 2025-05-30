@@ -60,7 +60,10 @@ const Output = ({ editorRef, language, input = "", selectedQuestion,roomId }) =>
       return;
     }
   
-    if (!sourceCode || !selectedQuestion || !selectedQuestion.testCases) {
+    if (!sourceCode || !selectedQuestion || !selectedQuestion.testcase) {
+      console.log(sourceCode) 
+      console.log(selectedQuestion) 
+      console.log(selectedQuestion.testcase) 
       toast({
         title: "No question selected or no test cases available.",
         status: "warning",
@@ -73,7 +76,7 @@ const Output = ({ editorRef, language, input = "", selectedQuestion,roomId }) =>
     const results = [];
     let hasCompileError = false;
   
-    for (const testCase of selectedQuestion.testCases) {
+    for (const testCase of selectedQuestion.testcase) {
       try {
         const { run: result } = await executeCode(language, sourceCode, testCase.input);
         const programOutput = result.stdout.trim().split("\n").join("\n");
@@ -98,7 +101,7 @@ const Output = ({ editorRef, language, input = "", selectedQuestion,roomId }) =>
     const passedCount = results.filter((testCase) => testCase.isPass).length;
     const status = hasCompileError
       ? "error"
-      : passedCount === selectedQuestion.testCases.length
+      : passedCount === selectedQuestion.testcase.length
       ? true
       : false;
   
@@ -120,7 +123,7 @@ const Output = ({ editorRef, language, input = "", selectedQuestion,roomId }) =>
               email: user.email || "Anonymous",
               timestamp: Timestamp.now(),
               code: sourceCode,
-              passedTestCases: `${passedCount}/${selectedQuestion.testCases.length}`,
+              passedTestCases: `${passedCount}/${selectedQuestion.testcase.length}`,
             }),
           });
         } else {
@@ -129,7 +132,7 @@ const Output = ({ editorRef, language, input = "", selectedQuestion,roomId }) =>
             status,
             code: sourceCode,
             timestamp: Timestamp.now(),
-            passedTestCases: `${passedCount}/${selectedQuestion.testCases.length}`,
+            passedTestCases: `${passedCount}/${selectedQuestion.testcase.length}`,
           };
           await updateDoc(questionRef, { users });
         }
@@ -145,7 +148,7 @@ const Output = ({ editorRef, language, input = "", selectedQuestion,roomId }) =>
                 email: user.email || "Anonymous",
                 timestamp: Timestamp.now(),
                 code: sourceCode,
-                passedTestCases: `${passedCount}/${selectedQuestion.testCases.length}`,
+                passedTestCases: `${passedCount}/${selectedQuestion.testcase.length}`,
               },
             ],
           },
@@ -155,7 +158,7 @@ const Output = ({ editorRef, language, input = "", selectedQuestion,roomId }) =>
   
       toast({
         title: "Success!",
-        description: `Your progress has been recorded. Passed ${passedCount} out of ${selectedQuestion.testCases.length} test case(s).`,
+        description: `Your progress has been recorded. Passed ${passedCount} out of ${selectedQuestion.testcase.length} test case(s).`,
         status: "success",
         duration: 4000,
       });
